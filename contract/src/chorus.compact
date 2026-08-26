@@ -1,0 +1,130 @@
+// Chorus — a public register of scam reports that nobody can read.
+//
+// The ledger holds only opaque 32-byte commitments, opaque 32-byte nullifiers,
+// per-commitment counts, and a match flag. The payment handle, the reporter's
+// secret, and the reporter's identity are witnesses: they are supplied by the
+// local runtime, never transmitted, and structurally cannot reach the chain.
+//
+// Two derivations, both domain-separated, following the bboard `publicKey`
+// pattern:
+//   handleCommitment = persistentHash([pad(32,"chorus:handle:v1"),    handleBytes])
+//   reportNullifier  = persistentHash([pad(32,"chorus:nullifier:v1"), handleBytes, sk])
+//
+// `handleBytes` is the client-side SHA-256 of the NORMALISED handle. Both
+// clients must normalise identically or two victims of the same scammer will
+// never match.
+
+pragma language_version 0.23;
+
+import CompactStandardLibrary;
+
+// ---------------------------------------------------------------------------
+// Public ledger state
+//
+// Everything here is world-readable and permanently public. That is the point:
+// an observer with the full chain and unlimited compute learns that *some*
+// handle has N reports, and nothing else.
+// ---------------------------------------------------------------------------
+
+// commitment -> number of distinct reporters
+export ledger reportCount: Map<Bytes<32>, Uint<64>>;
+
+// spent nullifiers, so one reporter cannot inflate a count
+export ledger seenNullifiers: Set<Bytes<32>>;
+
+// commitments that have reached the threshold
+export ledger matched: Set<Bytes<32>>;
+
+// global report count, for the public ledger panel
+export ledger totalReports: Counter;
+
+// `sealed` means this is written once, in the constructor, and can never be
+// changed afterwards — not by the deployer, not by anyone. The threshold is a
+// trust property of the deployment rather than a promise from its operator.
+export sealed ledger threshold: Uint<64>;
+
+constructor() {
+  threshold = 3;
+}
+
+// ---------------------------------------------------------------------------
+// Private witness
+//
+// The reporter's long-lived secret. Never disclosed, never transmitted. Its
+// only observable effect is the nullifier derived from it.
+// ---------------------------------------------------------------------------
+
+witness localSecretKey(): Bytes<32>;
+
+// ---------------------------------------------------------------------------
+// Derivations — exported as PURE circuits.
+//
+// Being pure, these compile to plain functions in the generated TypeScript API
+// and can be evaluated locally with no proof, no transaction and no network
+// request. That is what makes Check free and traceless: the client derives the
+// commitment itself and reads the public counter.
+//
+// Deriving through the contract's own circuit (rather than reimplementing the
+// hash in TypeScript) means the client and the chain cannot drift apart.
+// ---------------------------------------------------------------------------
+
+export circuit commitmentOf(handleBytes: Bytes<32>): Bytes<32> {
+  return persistentHash<Vector<2, Bytes<32>>>(
+    [pad(32, "chorus:handle:v1"), handleBytes]
+  );
+}
+
+export circuit nullifierOf(handleBytes: Bytes<32>, sk: Bytes<32>): Bytes<32> {
+  return persistentHash<Vector<3, Bytes<32>>>(
+    [pad(32, "chorus:nullifier:v1"), handleBytes, sk]
+  );
+}
+
+// ---------------------------------------------------------------------------
+// report — the only circuit that writes.
+//
+// `handleBytes` is a private parameter: circuit parameters are private by
+// default, so the handle itself is never public. Exactly two values are
+// disclosed, and they are both opaque hashes.
+// ---------------------------------------------------------------------------
+
+export circuit report(handleBytes: Bytes<32>): [] {
+  const sk = localSecretKey();
+
+  // The ONLY two values that become public. Everything else in this circuit —
+  // the handle, the secret key — is private by construction, and the compiler
+  // refuses to build a contract that leaks one by accident.
+  const commitment = disclose(commitmentOf(handleBytes));
+  const nullifier  = disclose(nullifierOf(handleBytes, sk));
+
+  // One reporter, one report, per handle. Note this reveals nothing about who
+  // the reporter is or how many other handles they have reported: the
+  // nullifier is unlinkable across handles and across reporters.
+  assert(!seenNullifiers.member(nullifier), "already reported this handle");
+  seenNullifiers.insert(nullifier);
+
+  if (!reportCount.member(commitment)) {
+    reportCount.insertDefault(commitment);
+  }
+  const next = (reportCount.lookup(commitment) + 1) as Uint<64>;
+  reportCount.insert(commitment, next);
+
+  totalReports.increment(1);
+
+  // At the threshold, and only at the threshold, one bit is released — and only
+  // to someone who can already derive this commitment, i.e. who already holds
+  // the handle. That bit is: you are not the only one.
+  if (next >= threshold) {
+    matched.insert(commitment);
+  }
+}
+
+// ---------------------------------------------------------------------------
+// There is deliberately NO `check` circuit.
+//
+// Checking is a local hash plus a public ledger read: derive the commitment
+// with `commitmentOf` and read `reportCount` / `matched` off the chain. No
+// transaction, no proof, no server that could log the query, no on-chain
+// footprint. Turning Check into a circuit would destroy the property that
+// makes it worth having.
+// ---------------------------------------------------------------------------
