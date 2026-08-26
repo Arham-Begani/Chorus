@@ -20,6 +20,51 @@ See [idea.md](idea.md) for the concept.
 
 ---
 
+## Quick start
+
+**Full setup instructions, prerequisites and troubleshooting: [SETUP.md](SETUP.md).**
+
+You can run Chorus right now with no wallet, no testnet funds, no Docker and no Compact
+compiler. The compiled circuits and proving key are committed, and local simulation mode
+runs them in process:
+
+```bash
+git clone https://github.com/Arham-Begani/Chorus.git ~/chorus
+cd ~/chorus
+npm install
+npm run build
+
+# terminal 1 — the reporter agent, in local simulation mode
+CHORUS_NETWORK=local npm run agent --workspace @chorus/cli
+
+# terminal 2 — the UI
+npm run dev --workspace @chorus/ui
+```
+
+Open <http://localhost:5173>. Start the agent **before** the UI — it writes the deployment
+record the frontend reads on load.
+
+Report a handle three times as three different reporters and watch the commitment flip to
+matched; then open the raw ledger panel and confirm there is no handle anywhere in it. The
+circuits, the derivations, duplicate rejection and the threshold are all real in this mode;
+the proof, the transaction and the chain are not. [SETUP.md](SETUP.md) has the exact table.
+
+Verify the privacy claim directly:
+
+```bash
+npm run test --workspace @chorus/contract    # 11/11
+```
+
+### Documentation
+
+| Document | What is in it |
+|---|---|
+| [SETUP.md](SETUP.md) | Prerequisites, both run paths, verification, troubleshooting, known limitations |
+| [idea.md](idea.md) | The concept: the problem, the insight, and why this needs Midnight specifically |
+| This README | The engineering log — verified versions, toolchain drift, circuit metrics, what broke and why |
+
+---
+
 ## M0 — verified environment
 
 Every version below was **observed on this machine**, not copied from docs. Where the docs
