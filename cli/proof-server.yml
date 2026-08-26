@@ -1,0 +1,18 @@
+# Proof server, started by testcontainers.
+#
+# The testkit looks for this file by name in the CLI package directory and
+# brings it up on a random host port, which it then hands to the proof
+# provider. Without it the environment fails at startup with
+# "open .../proof-server.yml: no such file or directory".
+#
+# Tag note: the Midnight install docs say 8.1.0, but the scaffold pins 8.0.3
+# and that is what actually served every proof during M0. Keeping 8.0.3 here
+# means the CLI path uses the version that is known to work; a manually-run
+# 8.1.0 on :6300 is only needed for the Lace wallet path.
+services:
+  proof-server:
+    image: midnightntwrk/proof-server:8.0.3
+    command: ['midnight-proof-server', '-v']
+    container_name: 'proof-server_$TESTCONTAINERS_UID'
+    ports:
+      - '0:6300'
