@@ -1,0 +1,20 @@
+{
+  "name": "@chorus/video",
+  "version": "0.1.0",
+  "license": "Apache-2.0",
+  "private": true,
+  "type": "module",
+  "description": "Records the Chorus demo video: real UI capture composited with motion graphics and captions.",
+  "scripts": {
+    "capture": "node capture.mjs",
+    "render": "node render.mjs",
+    "draft": "node render.mjs --draft",
+    "captions": "node captions.mjs",
+    "verify": "node verify.mjs",
+    "all": "npm run capture && npm run captions && npm run render && npm run verify"
+  },
+  "devDependencies": {
+    "ffmpeg-static": "^5.2.0",
+    "playwright": "^1.50.0"
+  }
+}
