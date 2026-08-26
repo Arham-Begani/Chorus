@@ -1,0 +1,41 @@
+{
+  "name": "@chorus/api",
+  "version": "0.1.0",
+  "license": "Apache-2.0",
+  "private": true,
+  "type": "module",
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
+    },
+    "./read": {
+      "types": "./dist/read.d.ts",
+      "import": "./dist/read.js",
+      "default": "./dist/read.js"
+    }
+  },
+  "scripts": {
+    "build": "rimraf dist && tsc --project tsconfig.build.json",
+    "ci": "npm run typecheck && npm run lint && npm run build",
+    "lint": "eslint src",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
+  },
+  "dependencies": {
+    "@chorus/contract": "0.1.0",
+    "@midnight-ntwrk/midnight-js-contracts": "4.1.1",
+    "@midnight-ntwrk/midnight-js-protocol": "4.1.1",
+    "@midnight-ntwrk/midnight-js-types": "4.1.1",
+    "@midnight-ntwrk/midnight-js-utils": "4.1.1",
+    "pino": "^10.3.1",
+    "rxjs": "^7.8.2"
+  },
+  "devDependencies": {
+    "rimraf": "^6.0.1",
+    "typescript": "^5.9.3"
+  }
+}
