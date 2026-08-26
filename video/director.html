@@ -1,0 +1,1464 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Chorus — demo director</title>
+    <style>
+      /*
+       * The motion-graphics stage.
+       *
+       * IMPORTANT: there are no CSS animations or transitions on anything that
+       * moves, on purpose. Every animated value is computed in JavaScript from
+       * a single time argument, so `__seek(t)` fully determines what is on
+       * screen. That is what lets the renderer step frame by frame and get
+       * identical output on any machine, at any speed — a CSS animation would
+       * make the render depend on wall-clock timing and produce judder.
+       *
+       * The one deliberate exception is `filter: blur()` on the aurora blobs,
+       * which is a static value computed once and never re-evaluated.
+       *
+       * Everything animated per frame is restricted to `transform`, `opacity`
+       * and `width`, because those composite without a full-page repaint.
+       * A full-screen blur or a per-frame `background` rewrite would drop
+       * frames in the software renderer the recorder runs under.
+       */
+
+      :root {
+        --bg: #04050e;
+        --fg: #f4f8ff;
+        --dim: #a3b0d8;
+        --hash: #9cc0f5;
+        --cyan: #3fe0ff;
+        --violet: #a98bff;
+        --pink: #ff6fd0;
+        --match: #ffd54a;
+        --bad: #ff6b81;
+        --ok: #3ff0a8;
+        --border: rgba(154, 175, 245, 0.24);
+        --panel: rgba(30, 37, 72, 0.72);
+        --accent: var(--cyan);
+        --sans:
+          'Segoe UI Variable Display', 'Segoe UI', Inter, -apple-system, 'Helvetica Neue', Arial, sans-serif;
+        --mono: ui-monospace, 'Cascadia Mono', 'Cascadia Code', Consolas, Menlo, monospace;
+      }
+
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+
+      html,
+      body {
+        width: 1920px;
+        height: 1080px;
+        overflow: hidden;
+        background: var(--bg);
+        color: var(--fg);
+        font-family: var(--sans);
+      }
+
+      #stage {
+        position: relative;
+        width: 1920px;
+        height: 1080px;
+        overflow: hidden;
+        isolation: isolate;
+      }
+
+      /* ---------- background layers ---------- */
+
+      #aurora {
+        position: absolute;
+        inset: -20%;
+        z-index: 0;
+      }
+
+      #aurora b {
+        position: absolute;
+        display: block;
+        border-radius: 50%;
+        filter: blur(90px);
+        will-change: transform;
+      }
+
+      #aurora b:nth-child(1) {
+        width: 900px;
+        height: 900px;
+        background: rgba(124, 96, 255, 0.62);
+      }
+      #aurora b:nth-child(2) {
+        width: 820px;
+        height: 820px;
+        background: rgba(0, 214, 255, 0.5);
+      }
+      #aurora b:nth-child(3) {
+        width: 760px;
+        height: 760px;
+        background: rgba(255, 92, 200, 0.42);
+      }
+      #aurora b:nth-child(4) {
+        width: 980px;
+        height: 980px;
+        background: rgba(0, 255, 190, 0.24);
+      }
+      #aurora b:nth-child(5) {
+        width: 700px;
+        height: 700px;
+        background: rgba(90, 120, 255, 0.4);
+      }
+
+      #dust {
+        position: absolute;
+        inset: 0;
+        z-index: 1;
+      }
+
+      #grid {
+        position: absolute;
+        inset: -60px;
+        z-index: 2;
+        background-image:
+          linear-gradient(rgba(160, 190, 255, 0.07) 1px, transparent 1px),
+          linear-gradient(90deg, rgba(160, 190, 255, 0.07) 1px, transparent 1px);
+        background-size: 64px 64px;
+        -webkit-mask-image: radial-gradient(120% 90% at 50% 40%, #000 20%, transparent 92%);
+        will-change: transform;
+      }
+
+      /* Beat-coloured ambient wash. Rewritten only when the beat changes. */
+      #glowbed {
+        position: absolute;
+        inset: 0;
+        z-index: 3;
+      }
+
+      #vignette {
+        position: absolute;
+        inset: 0;
+        z-index: 9;
+        pointer-events: none;
+        background: radial-gradient(112% 88% at 50% 46%, rgba(2, 3, 10, 0.24) 8%, rgba(2, 3, 10, 0.88) 100%);
+      }
+
+      /* One-off light burst on payoff beats. */
+      #flash {
+        position: absolute;
+        inset: 0;
+        z-index: 8;
+        pointer-events: none;
+        opacity: 0;
+        background: radial-gradient(58% 58% at 50% 48%, rgba(255, 213, 74, 0.85), transparent 70%);
+        will-change: opacity;
+      }
+
+      #scene {
+        position: absolute;
+        inset: 0;
+        z-index: 6;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        /* The bottom inset is the caption's lane. Everything mounted into the
+         * scene has to fit in what is left — 1080 minus these two — which is
+         * why the app frame's height is derived from it rather than picked. */
+        padding: 92px 120px 228px;
+        will-change: transform, opacity;
+      }
+
+      .reveal {
+        will-change: transform, opacity;
+      }
+
+      /* ---------- cards ---------- */
+
+      .card {
+        max-width: 1440px;
+        text-align: left;
+      }
+
+      .card .eyebrow {
+        font-size: 22px;
+        letter-spacing: 0.44em;
+        color: var(--accent);
+        text-transform: uppercase;
+        margin-bottom: 30px;
+        font-weight: 600;
+      }
+
+      /* Gradient type with a moving highlight. `background-position` is set per
+       * frame, which repaints one element rather than the page. */
+      .card h1,
+      .card h2 {
+        background-image: linear-gradient(
+          100deg,
+          #ffffff 0%,
+          var(--accent) 18%,
+          #ffffff 34%,
+          var(--accent) 52%,
+          #ffffff 70%
+        );
+        background-size: 320% 100%;
+        -webkit-background-clip: text;
+        background-clip: text;
+        color: transparent;
+        /* Gradient type cannot take a text-shadow, so the lift off the bright
+         * aurora has to come from a drop-shadow on the element itself. */
+        filter: drop-shadow(0 6px 26px rgba(0, 0, 0, 0.85));
+        will-change: background-position;
+      }
+
+      .card h1 {
+        font-size: 138px;
+        letter-spacing: 0.16em;
+        font-weight: 700;
+        line-height: 1.02;
+      }
+
+      .card h2 {
+        font-size: 64px;
+        font-weight: 650;
+        line-height: 1.2;
+      }
+
+      .card .subtitle {
+        margin-top: 28px;
+        font-size: 36px;
+        line-height: 1.48;
+        color: #d3ddf8;
+        white-space: pre-line;
+        text-shadow: 0 3px 22px rgba(0, 0, 0, 0.9);
+      }
+
+      .card .body {
+        margin-top: 36px;
+        font-size: 29px;
+        line-height: 1.76;
+        color: #dbe4fb;
+        text-shadow: 0 3px 22px rgba(0, 0, 0, 0.9);
+      }
+
+      .card .rule {
+        height: 4px;
+        border-radius: 2px;
+        margin: 34px 0 0;
+        background: linear-gradient(90deg, var(--accent), transparent);
+        transform-origin: left center;
+        will-change: transform;
+      }
+
+      /* ---------- app footage frame ---------- */
+
+      .persp {
+        perspective: 2200px;
+      }
+
+      .browser {
+        position: relative;
+        border: 1px solid var(--border);
+        border-radius: 16px;
+        background: var(--panel);
+        box-shadow:
+          0 60px 150px -40px rgba(0, 0, 0, 0.92),
+          0 0 90px -30px color-mix(in srgb, var(--accent) 70%, transparent);
+        overflow: hidden;
+        transform-origin: center center;
+        will-change: transform;
+      }
+
+      .browser .chrome {
+        height: 48px;
+        background: rgba(10, 13, 30, 0.94);
+        border-bottom: 1px solid var(--border);
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 0 18px;
+      }
+
+      .browser .dot {
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        background: #39416b;
+      }
+
+      .browser .dot:nth-child(1) {
+        background: var(--bad);
+      }
+      .browser .dot:nth-child(2) {
+        background: var(--match);
+      }
+      .browser .dot:nth-child(3) {
+        background: var(--ok);
+      }
+
+      .browser .url {
+        margin-left: 16px;
+        font-size: 16px;
+        color: var(--dim);
+        font-family: var(--mono);
+      }
+
+      .browser .viewport {
+        position: relative;
+        overflow: hidden;
+        background: #06080f;
+      }
+
+      .browser img {
+        display: block;
+        width: 100%;
+        transform-origin: top center;
+        will-change: transform;
+      }
+
+      /* A single slow highlight crossing the glass. */
+      .browser .sweep {
+        position: absolute;
+        inset: 0;
+        pointer-events: none;
+        background: linear-gradient(104deg, transparent 40%, rgba(255, 255, 255, 0.13) 50%, transparent 60%);
+        will-change: transform;
+      }
+
+      .browser .missing {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        height: 100%;
+        color: var(--dim);
+        font-size: 24px;
+        text-align: center;
+        padding: 40px;
+      }
+
+      /* ---------- callout ---------- */
+
+      .callout {
+        position: absolute;
+        pointer-events: none;
+        background: color-mix(in srgb, var(--accent) 12%, transparent);
+        border-radius: 6px;
+        will-change: transform, opacity;
+      }
+
+      /* Corner brackets rather than a full box: they read as "look here"
+       * without hiding what is underneath. */
+      .callout i {
+        position: absolute;
+        width: 34px;
+        height: 34px;
+        border: 3px solid var(--accent);
+        transform-origin: center;
+        will-change: transform;
+      }
+
+      .callout i:nth-child(1) {
+        top: -3px;
+        left: -3px;
+        border-right: none;
+        border-bottom: none;
+        border-radius: 8px 0 0 0;
+      }
+      .callout i:nth-child(2) {
+        top: -3px;
+        right: -3px;
+        border-left: none;
+        border-bottom: none;
+        border-radius: 0 8px 0 0;
+      }
+      .callout i:nth-child(3) {
+        bottom: -3px;
+        left: -3px;
+        border-right: none;
+        border-top: none;
+        border-radius: 0 0 0 8px;
+      }
+      .callout i:nth-child(4) {
+        bottom: -3px;
+        right: -3px;
+        border-left: none;
+        border-top: none;
+        border-radius: 0 0 8px 0;
+      }
+
+      /* The tag hangs outside the box, on whichever side the timeline says is
+       * clear. It is opaque, so putting it over the panel's own text would
+       * hide the thing the shot is there to show. */
+      .callout .tag {
+        position: absolute;
+        top: -48px;
+        left: -3px;
+        background: var(--accent);
+        color: #05080f;
+        font-size: 20px;
+        font-weight: 700;
+        letter-spacing: 0.05em;
+        padding: 7px 16px;
+        border-radius: 8px;
+        white-space: nowrap;
+        box-shadow: 0 10px 30px -10px color-mix(in srgb, var(--accent) 90%, transparent);
+        transform-origin: left center;
+        will-change: transform, opacity;
+      }
+
+      .callout.below .tag {
+        top: auto;
+        bottom: -48px;
+      }
+
+      /* ---------- side panel ---------- */
+
+      .side {
+        width: 580px;
+        flex: 0 0 580px;
+        margin-left: 60px;
+      }
+
+      .side h3 {
+        font-size: 22px;
+        letter-spacing: 0.24em;
+        text-transform: uppercase;
+        color: var(--accent);
+        margin-bottom: 26px;
+        font-weight: 650;
+      }
+
+      .side .kv {
+        display: flex;
+        justify-content: space-between;
+        align-items: baseline;
+        gap: 20px;
+        padding: 20px 0;
+        border-bottom: 1px solid var(--border);
+        font-size: 28px;
+      }
+
+      .side .kv .k {
+        color: var(--dim);
+      }
+
+      .side .kv .v {
+        color: var(--fg);
+        text-align: right;
+        font-family: var(--mono);
+        font-size: 34px;
+      }
+
+      .side .kv .v.word {
+        font-size: 28px;
+        color: var(--bad);
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        font-weight: 700;
+      }
+
+      /* ---------- derivation diagram ---------- */
+
+      .diagram {
+        width: 100%;
+        max-width: 1560px;
+      }
+
+      .diagram .lane {
+        display: flex;
+        align-items: center;
+        gap: 32px;
+        margin-bottom: 44px;
+      }
+
+      .node {
+        position: relative;
+        border: 1px solid var(--border);
+        border-radius: 14px;
+        background: var(--panel);
+        padding: 22px 26px;
+        font-size: 26px;
+        min-width: 300px;
+        text-align: center;
+        font-family: var(--mono);
+        transform-origin: center;
+        will-change: transform, opacity;
+      }
+
+      .node .lbl {
+        display: block;
+        font-family: var(--sans);
+        font-size: 15px;
+        letter-spacing: 0.18em;
+        text-transform: uppercase;
+        margin-bottom: 12px;
+        font-weight: 650;
+      }
+
+      .node.secret {
+        border-color: rgba(255, 107, 129, 0.55);
+        box-shadow: inset 0 0 40px -18px var(--bad);
+      }
+
+      .node.secret .lbl {
+        color: var(--bad);
+      }
+
+      .node.public {
+        border-color: rgba(63, 224, 255, 0.6);
+        box-shadow: inset 0 0 40px -18px var(--cyan);
+      }
+
+      .node.public .lbl {
+        color: var(--cyan);
+      }
+
+      .node .hashval {
+        color: var(--hash);
+        font-size: 23px;
+        letter-spacing: 0.05em;
+      }
+
+      /* Lit when the value arrives. Driven per frame via opacity. */
+      .node .halo {
+        position: absolute;
+        inset: -2px;
+        border-radius: 14px;
+        pointer-events: none;
+        box-shadow: 0 0 46px -4px var(--cyan);
+        opacity: 0;
+        will-change: opacity;
+      }
+
+      .arrow {
+        flex: 1;
+        height: 3px;
+        border-radius: 2px;
+        background: rgba(154, 175, 245, 0.18);
+        position: relative;
+      }
+
+      .arrow .fill {
+        position: absolute;
+        inset: 0 auto 0 0;
+        border-radius: 2px;
+        background: linear-gradient(90deg, var(--violet), var(--cyan));
+        will-change: width;
+      }
+
+      /* The value physically travelling down the wire. */
+      .arrow .pip {
+        position: absolute;
+        top: -5px;
+        left: 0;
+        width: 13px;
+        height: 13px;
+        border-radius: 50%;
+        background: var(--cyan);
+        box-shadow: 0 0 22px 4px rgba(63, 224, 255, 0.85);
+        will-change: transform, opacity;
+      }
+
+      .arrow .op {
+        position: absolute;
+        top: -40px;
+        left: 50%;
+        transform: translateX(-50%);
+        font-size: 19px;
+        color: var(--dim);
+        white-space: nowrap;
+        font-family: var(--mono);
+      }
+
+      .barrier {
+        margin: 30px 0 0;
+        border-top: 2px dashed rgba(255, 107, 129, 0.7);
+        position: relative;
+        height: 0;
+      }
+
+      .barrier span {
+        position: absolute;
+        top: -24px;
+        left: 50%;
+        transform: translateX(-50%);
+        /* nowrap matters: the span's containing block is the full-width rule,
+         * so at left:50% it would otherwise wrap inside the right half and
+         * cover the line it is labelling. */
+        white-space: nowrap;
+        background: rgba(8, 10, 24, 0.9);
+        border: 1px solid rgba(255, 107, 129, 0.45);
+        border-radius: 999px;
+        padding: 8px 26px;
+        font-size: 19px;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        color: var(--bad);
+        font-weight: 600;
+      }
+
+      /* ---------- public / never public table ---------- */
+
+      .table {
+        width: 100%;
+        max-width: 1600px;
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 0 64px;
+      }
+
+      .table .col {
+        border-radius: 18px;
+        padding: 30px 34px 22px;
+        background: var(--panel);
+        border: 1px solid var(--border);
+      }
+
+      .table h3 {
+        font-size: 26px;
+        letter-spacing: 0.2em;
+        text-transform: uppercase;
+        padding-bottom: 20px;
+        border-bottom: 2px solid var(--border);
+        margin-bottom: 8px;
+        font-weight: 650;
+      }
+
+      .table .col.pub {
+        box-shadow: inset 0 0 70px -40px var(--cyan);
+      }
+
+      .table .col.pub h3 {
+        color: var(--cyan);
+        border-color: rgba(63, 224, 255, 0.55);
+      }
+
+      .table .col.priv {
+        box-shadow: inset 0 0 70px -40px var(--bad);
+      }
+
+      .table .col.priv h3 {
+        color: var(--bad);
+        border-color: rgba(255, 107, 129, 0.55);
+      }
+
+      .table li {
+        list-style: none;
+        font-size: 27px;
+        line-height: 1.45;
+        padding: 18px 0 18px 44px;
+        border-bottom: 1px solid rgba(154, 175, 245, 0.12);
+        color: var(--fg);
+        position: relative;
+      }
+
+      .table li:last-child {
+        border-bottom: none;
+      }
+
+      .table li::before {
+        position: absolute;
+        left: 0;
+        top: 18px;
+        font-size: 25px;
+        font-weight: 700;
+      }
+
+      .table .col.pub li::before {
+        content: '✓';
+        color: var(--cyan);
+      }
+
+      .table .col.priv li::before {
+        content: '✕';
+        color: var(--bad);
+      }
+
+      /* ---------- caption ---------- */
+
+      #caption {
+        position: absolute;
+        z-index: 10;
+        left: 120px;
+        right: 120px;
+        bottom: 92px;
+        min-height: 100px;
+      }
+
+      #caption .rule {
+        width: 74px;
+        height: 4px;
+        border-radius: 2px;
+        background: var(--accent);
+        margin-bottom: 18px;
+        transform-origin: left center;
+        box-shadow: 0 0 20px 0 color-mix(in srgb, var(--accent) 80%, transparent);
+        will-change: transform;
+      }
+
+      #caption .text {
+        font-size: 32px;
+        line-height: 1.46;
+        color: var(--fg);
+        font-weight: 500;
+        text-shadow: 0 4px 26px rgba(0, 0, 0, 0.95);
+      }
+
+      /* One box per word, spaced by ordinary whitespace between the spans
+       * rather than inside them — a space carried inside an inline-block
+       * survives a line break and indents the wrapped line. */
+      #caption .w {
+        display: inline-block;
+        will-change: transform, opacity;
+      }
+
+      /* ---------- chrome ---------- */
+
+      #chapter {
+        position: absolute;
+        z-index: 10;
+        top: 52px;
+        left: 120px;
+        font-size: 20px;
+        letter-spacing: 0.3em;
+        text-transform: uppercase;
+        color: var(--accent);
+        font-weight: 650;
+        will-change: transform, opacity;
+      }
+
+      #brand {
+        position: absolute;
+        z-index: 10;
+        top: 52px;
+        right: 120px;
+        font-size: 19px;
+        letter-spacing: 0.36em;
+        color: var(--dim);
+        text-transform: uppercase;
+        font-weight: 600;
+      }
+
+      #dots {
+        position: absolute;
+        z-index: 10;
+        right: 120px;
+        bottom: 46px;
+        display: flex;
+        gap: 8px;
+        align-items: center;
+      }
+
+      #dots i {
+        display: block;
+        height: 5px;
+        width: 12px;
+        border-radius: 3px;
+        background: rgba(180, 200, 255, 0.24);
+        will-change: width, background-color;
+      }
+
+      #progress {
+        position: absolute;
+        z-index: 10;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        height: 6px;
+        background: rgba(255, 255, 255, 0.08);
+      }
+
+      #progress .bar {
+        position: relative;
+        height: 100%;
+        background: linear-gradient(90deg, var(--violet), var(--cyan), var(--pink));
+        background-size: 1920px 100%;
+        will-change: width;
+      }
+
+      #progress .head {
+        position: absolute;
+        right: -3px;
+        top: -4px;
+        width: 6px;
+        height: 14px;
+        border-radius: 3px;
+        background: #fff;
+        box-shadow: 0 0 20px 4px rgba(255, 255, 255, 0.8);
+      }
+    </style>
+  </head>
+  <body>
+    <div id="stage">
+      <div id="aurora"><b></b><b></b><b></b><b></b><b></b></div>
+      <canvas id="dust" width="1920" height="1080"></canvas>
+      <div id="grid"></div>
+      <div id="glowbed"></div>
+      <div id="scene"></div>
+      <div id="flash"></div>
+      <div id="vignette"></div>
+      <div id="chapter"></div>
+      <div id="brand">CHORUS · MIDNIGHT</div>
+      <div id="caption"><div class="rule"></div><span class="text"></span></div>
+      <div id="dots"></div>
+      <div id="progress"><div class="bar"><span class="head"></span></div></div>
+    </div>
+
+    <script type="module">
+      import { BEATS, FPS, withOffsets, totalDuration } from './timeline.mjs';
+
+      const scene = document.getElementById('scene');
+      const captionEl = document.querySelector('#caption .text');
+      const captionRule = document.querySelector('#caption .rule');
+      const chapterEl = document.getElementById('chapter');
+      const bar = document.querySelector('#progress .bar');
+      const grid = document.getElementById('grid');
+      const glowbed = document.getElementById('glowbed');
+      const flash = document.getElementById('flash');
+      const dotsEl = document.getElementById('dots');
+      const blobs = Array.from(document.querySelectorAll('#aurora b'));
+      const dust = document.getElementById('dust');
+      const dctx = dust.getContext('2d');
+
+      const beats = withOffsets();
+      const total = totalDuration();
+
+      const ACCENT = {
+        cyan: '#3fe0ff',
+        violet: '#a98bff',
+        pink: '#ff6fd0',
+        match: '#ffd54a',
+        bad: '#ff6b81',
+      };
+      const accentOf = (beat) => ACCENT[beat.accent] ?? ACCENT.cyan;
+
+      /* ---------- easing ---------- */
+      const clamp01 = (v) => (v < 0 ? 0 : v > 1 ? 1 : v);
+      const easeOut = (p) => 1 - Math.pow(1 - clamp01(p), 3);
+      const easeOutBack = (p) => {
+        const c = clamp01(p);
+        return 1 + 2.2 * Math.pow(c - 1, 3) + 1.2 * Math.pow(c - 1, 2);
+      };
+      const easeInOut = (p) => {
+        const c = clamp01(p);
+        return c < 0.5 ? 4 * c * c * c : 1 - Math.pow(-2 * c + 2, 3) / 2;
+      };
+      /** A short impulse: 0 -> 1 -> 0, peaking at `at`. */
+      const impulse = (elapsed, at, rise = 0.12, fall = 0.9) => {
+        if (elapsed < at) return clamp01((elapsed - (at - rise)) / rise);
+        return 1 - clamp01((elapsed - at) / fall);
+      };
+
+      const escapeHtml = (s) =>
+        String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
+
+      /**
+       * Staggered entrance for a list of elements.
+       *
+       * Writes are skipped once an element has finished arriving, which keeps
+       * the per-frame style work proportional to what is actually moving
+       * rather than to how much is on screen.
+       */
+      const revealAll = (els, elapsed, { start = 0, stagger = 0.13, rise = 30, dur = 0.6, scale = 0.985 } = {}) => {
+        els.forEach((el, i) => {
+          const p = (elapsed - start - i * stagger) / dur;
+          if (el._done && p >= 1) return;
+          const e = easeOut(p);
+          el.style.opacity = String(e);
+          el.style.transform = `translateY(${(1 - e) * rise}px) scale(${scale + (1 - scale) * e})`;
+          el._done = p >= 1;
+        });
+      };
+
+      /* ---------- measured capture data ----------
+       * Positions and derived values come from `capture/capture.json`, which
+       * the capture script writes by measuring and reading the real page.
+       * Boxes are fractions of the IMAGE, not of the frame — so a callout has
+       * to be offset by the same pan the image gets, or it drifts off its
+       * target as the shot travels. Hand-tuned frame-space coordinates were
+       * the previous approach and they broke whenever a panel changed height.
+       */
+      let CAPTURE_BOXES = {};
+      let DERIVED = null;
+      const boxesReady = fetch('capture/capture.json')
+        .then((r) => (r.ok ? r.json() : null))
+        .then((data) => {
+          if (data && data.boxes) CAPTURE_BOXES = data.boxes;
+          if (data && data.derived && data.derived.commitment) DERIVED = data.derived;
+        })
+        .catch(() => {});
+
+      /* ---------- deterministic dust ----------
+       * A seeded field of drifting particles and hex glyphs. Positions are a
+       * pure function of t, so the layer re-renders identically at any frame.
+       */
+      const mulberry = (seed) => () => {
+        seed |= 0;
+        seed = (seed + 0x6d2b79f5) | 0;
+        let x = Math.imul(seed ^ (seed >>> 15), 1 | seed);
+        x = (x + Math.imul(x ^ (x >>> 7), 61 | x)) ^ x;
+        return ((x ^ (x >>> 14)) >>> 0) / 4294967296;
+      };
+
+      const HEX = '0123456789abcdef';
+      const PARTICLES = (() => {
+        const rnd = mulberry(20260826);
+        const out = [];
+        for (let i = 0; i < 110; i += 1) {
+          out.push({
+            x: rnd(),
+            y: rnd(),
+            r: 0.6 + rnd() * 2.1,
+            vx: (rnd() - 0.5) * 0.012,
+            vy: -0.004 - rnd() * 0.012,
+            amp: rnd() * 0.02,
+            phase: rnd() * Math.PI * 2,
+            alpha: 0.16 + rnd() * 0.5,
+          });
+        }
+        return out;
+      })();
+
+      const GLYPHS = (() => {
+        const rnd = mulberry(77713);
+        const out = [];
+        for (let i = 0; i < 30; i += 1) {
+          out.push({
+            x: rnd(),
+            y: rnd(),
+            vy: 0.006 + rnd() * 0.02,
+            size: 11 + Math.floor(rnd() * 9),
+            alpha: 0.05 + rnd() * 0.13,
+            seed: Math.floor(rnd() * 1000),
+            len: 3 + Math.floor(rnd() * 5),
+          });
+        }
+        return out;
+      })();
+
+      const wrap01 = (v) => ((v % 1) + 1) % 1;
+
+      const drawDust = (t) => {
+        dctx.clearRect(0, 0, 1920, 1080);
+
+        for (const p of PARTICLES) {
+          const x = wrap01(p.x + p.vx * t) * 1920;
+          const y = wrap01(p.y + p.vy * t + Math.sin(p.phase + t * 0.5) * p.amp) * 1080;
+          dctx.globalAlpha = p.alpha;
+          dctx.fillStyle = '#bcd6ff';
+          dctx.beginPath();
+          dctx.arc(x, y, p.r, 0, Math.PI * 2);
+          dctx.fill();
+        }
+
+        // Faint columns of hex, because that is what the register is made of.
+        dctx.font = '400 13px ui-monospace, Consolas, monospace';
+        for (const g of GLYPHS) {
+          const x = g.x * 1920;
+          const y = wrap01(g.y + g.vy * t) * 1080;
+          dctx.globalAlpha = g.alpha;
+          dctx.fillStyle = '#7fd7ff';
+          dctx.font = `400 ${g.size}px ui-monospace, Consolas, monospace`;
+          let s = '';
+          for (let i = 0; i < g.len; i += 1) {
+            s += HEX[(g.seed + i * 7 + Math.floor(t * 3)) % 16];
+          }
+          dctx.fillText(s, x, y);
+        }
+
+        dctx.globalAlpha = 1;
+      };
+
+      /* ---------- scramble ----------
+       * Characters settle left to right into the real value. Purely a function
+       * of elapsed time, so it is reproducible frame for frame.
+       */
+      const scramble = (target, elapsed, start, dur) => {
+        const p = clamp01((elapsed - start) / dur);
+        const settled = Math.floor(p * target.length);
+        let out = '';
+        for (let i = 0; i < target.length; i += 1) {
+          const ch = target[i];
+          if (i < settled || !/[0-9a-f]/i.test(ch)) {
+            out += ch;
+          } else {
+            out += HEX[(Math.floor(elapsed * 26) + i * 11) % 16];
+          }
+        }
+        return out;
+      };
+
+      /* ---------- scene builders ---------- */
+
+      const buildCard = (beat) => {
+        const lines = (beat.body ?? []).map((line) => `<div class="line">${escapeHtml(line)}</div>`).join('');
+        const heading = beat.id === 'title' ? 'h1' : 'h2';
+        return `
+          <div class="card">
+            ${beat.id === 'title' ? '<div class="eyebrow reveal">Brainwave 2026 · Midnight Track</div>' : ''}
+            <${heading} class="reveal shimmer">${escapeHtml(beat.title ?? '')}</${heading}>
+            <div class="rule"></div>
+            ${beat.subtitle ? `<div class="subtitle reveal">${escapeHtml(beat.subtitle)}</div>` : ''}
+            ${lines ? `<div class="body">${lines}</div>` : ''}
+          </div>`;
+      };
+
+      const buildDiagram = () => {
+        // Real values, read off the running app by the capture step. If a
+        // capture has not been taken yet, fall back to naming the value rather
+        // than inventing one that looks like a hash.
+        const handle = DERIVED?.normalised || 'scammer@upi';
+        const commitment = DERIVED?.commitment || 'commitment';
+        const nullifier = DERIVED?.nullifier || 'nullifier';
+
+        return `
+          <div class="diagram">
+            <div class="lane">
+              <div class="node secret reveal"><span class="lbl">private · your device</span>${escapeHtml(handle)}</div>
+              <div class="arrow"><span class="op">normalise · SHA-256</span><div class="fill"></div><span class="pip"></span></div>
+              <div class="node secret reveal"><span class="lbl">private</span><span class="hashval">handleBytes</span></div>
+              <div class="arrow"><span class="op">persistentHash</span><div class="fill"></div><span class="pip"></span></div>
+              <div class="node public reveal" data-settle="${escapeHtml(commitment)}">
+                <span class="lbl">published</span><span class="hashval">${escapeHtml(commitment)}</span><span class="halo"></span>
+              </div>
+            </div>
+            <div class="lane">
+              <div class="node secret reveal"><span class="lbl">private · never leaves</span>your secret key</div>
+              <div class="arrow"><span class="op">persistentHash</span><div class="fill"></div><span class="pip"></span></div>
+              <div class="node public reveal" data-settle="${escapeHtml(nullifier)}">
+                <span class="lbl">published</span><span class="hashval">${escapeHtml(nullifier)}</span><span class="halo"></span>
+              </div>
+            </div>
+            <!-- Keyed to colour, not to position: the published nodes sit on the
+                 same rows as the private ones, so any "above / below this line"
+                 phrasing would contradict the picture. -->
+            <div class="barrier reveal"><span>everything in red stays on your device · only the blue values are published</span></div>
+          </div>`;
+      };
+
+      const buildApp = (beat, wide) => `
+        <div class="persp">
+          <div class="browser reveal" style="width:${wide ? 1560 : 1000}px">
+            <div class="chrome">
+              <span class="dot"></span><span class="dot"></span><span class="dot"></span>
+              <span class="url">localhost:5173 — Chorus</span>
+            </div>
+            <div class="viewport" style="height:${wide ? 690 : 655}px">
+              <img src="capture/${beat.shot}" alt="" onerror="this.style.display='none';this.parentNode.querySelector('.missing').style.display='flex'" />
+              <div class="missing" style="display:none">
+                capture/${escapeHtml(beat.shot ?? '')} not found —<br />run <code>npm run capture</code> first
+              </div>
+            </div>
+            <div class="sweep"></div>
+          </div>
+        </div>`;
+
+      const buildSplit = (beat) => `
+        <div style="display:flex;align-items:center;width:100%;max-width:1700px">
+          ${buildApp(beat, false)}
+          <div class="side">
+            <h3 class="reveal">${escapeHtml(beat.panel?.title ?? '')}</h3>
+            ${(beat.panel?.rows ?? [])
+              .map(([k, v]) => {
+                const numeric = /^\d+$/.test(v);
+                return `<div class="kv reveal"><span class="k">${escapeHtml(k)}</span><span class="v ${
+                  numeric ? 'num' : 'word'
+                }" data-to="${escapeHtml(v)}">${numeric ? '0' : escapeHtml(v)}</span></div>`;
+              })
+              .join('')}
+          </div>
+        </div>`;
+
+      const buildTable = () => `
+        <div class="table">
+          <div class="col pub">
+            <h3 class="reveal">Public, permanently</h3>
+            <ul>
+              <li class="reveal">32-byte commitments</li>
+              <li class="reveal">a count for each</li>
+              <li class="reveal">32-byte nullifiers</li>
+              <li class="reveal">a match flag</li>
+            </ul>
+          </div>
+          <div class="col priv">
+            <h3 class="reveal">Never public, to anyone</h3>
+            <ul>
+              <li class="reveal">the payment handle</li>
+              <li class="reveal">the amount lost</li>
+              <li class="reveal">the reporter's identity or wallet</li>
+              <li class="reveal">which nullifiers share an owner</li>
+            </ul>
+          </div>
+        </div>`;
+
+      const build = (beat) => {
+        switch (beat.kind) {
+          case 'diagram':
+            return buildDiagram();
+          case 'app':
+            return buildApp(beat, true);
+          case 'split':
+            return buildSplit(beat);
+          case 'table':
+            return buildTable();
+          default:
+            return buildCard(beat);
+        }
+      };
+
+      /* ---------- beat dots ---------- */
+      dotsEl.innerHTML = beats.map(() => '<i></i>').join('');
+      const dotEls = Array.from(dotsEl.children);
+
+      /** Colour per annotation target — overrides the beat accent. */
+      const CALLOUT_ACCENT = {
+        match: ACCENT.match,
+        rejected: ACCENT.bad,
+      };
+
+      let currentIndex = -1;
+      let revealEls = [];
+      let wordEls = [];
+      let imgEl = null;
+      let sweepEl = null;
+      let calloutEl = null;
+      let ruleEl = null;
+      let shimmerEl = null;
+      let numEls = [];
+      let settleEls = [];
+      // The last time seek() was called, so a late-loading image can ask for
+      // the frame to be recomputed. Geometry depends on the image's laid-out
+      // height; computing it against an unloaded image silently yields zero,
+      // which collapses the callout and disables the pan.
+      let lastSeekTime = 0;
+
+      const mount = (beat) => {
+        const accent = accentOf(beat);
+        document.documentElement.style.setProperty('--accent', accent);
+
+        // Ambient wash in the beat's colour. Written once per beat, never per
+        // frame — a full-screen gradient rewrite is a whole-page repaint.
+        glowbed.style.background = `radial-gradient(72% 58% at 50% 42%, ${accent}1f, transparent 72%)`;
+
+        scene.innerHTML = build(beat);
+        revealEls = Array.from(scene.querySelectorAll('.reveal'));
+        revealEls.forEach((el) => {
+          el._done = false;
+        });
+        imgEl = scene.querySelector('.browser img');
+        sweepEl = scene.querySelector('.browser .sweep');
+        ruleEl = scene.querySelector('.card .rule');
+        shimmerEl = scene.querySelector('.shimmer');
+        numEls = Array.from(scene.querySelectorAll('.v.num'));
+        settleEls = Array.from(scene.querySelectorAll('.node[data-settle]'));
+        calloutEl = null;
+
+        // Caption as individual words, so it can arrive kinetically.
+        const words = (beat.caption ?? '').split(/\s+/).filter((w) => w !== '');
+        captionEl.innerHTML = words.map((w) => `<span class="w">${escapeHtml(w)}</span>`).join(' ');
+        wordEls = Array.from(captionEl.children);
+        wordEls.forEach((el) => {
+          el._done = false;
+        });
+
+        // Recompute once the shot has real dimensions.
+        if (imgEl && !imgEl.complete) {
+          imgEl.addEventListener('load', () => seek(lastSeekTime), { once: true });
+        }
+
+        // The measured box is keyed by the SHOT, since that is what was
+        // photographed; `annotate.target` only selects the colour and label.
+        const measured = beat.shot ? CAPTURE_BOXES[beat.shot.replace(/\.png$/, '')] : undefined;
+        if (beat.annotate && measured) {
+          const viewport = scene.querySelector('.viewport');
+          const box = document.createElement('div');
+          box.className = beat.annotate.place === 'below' ? 'callout below' : 'callout';
+          box.style.setProperty('--accent', CALLOUT_ACCENT[beat.annotate.target] ?? accent);
+          box.innerHTML = `<i></i><i></i><i></i><i></i><span class="tag">${escapeHtml(beat.annotate.label)}</span>`;
+          viewport.appendChild(box);
+          box.dataset.box = JSON.stringify(measured);
+          calloutEl = box;
+        }
+      };
+
+      /**
+       * Position everything for absolute time `t`. This is the entire public
+       * API of the page — the recorder calls it once per frame.
+       */
+      const seek = (t) => {
+        lastSeekTime = t;
+        const time = Math.max(0, Math.min(t, total - 0.0001));
+        const index = beats.findIndex((b) => time >= b.start && time < b.end);
+        const beat = beats[index] ?? beats[beats.length - 1];
+        const elapsed = time - beat.start;
+        const p = elapsed / beat.duration;
+
+        if (index !== currentIndex) {
+          currentIndex = index;
+          mount(beat);
+        }
+
+        /* ---- background ---- */
+        drawDust(time);
+
+        blobs.forEach((b, i) => {
+          const s = 0.55 + i * 0.19;
+          const x = 260 + i * 340 + Math.sin(time * 0.13 * s + i * 1.7) * 320;
+          const y = 200 + ((i * 260) % 700) + Math.cos(time * 0.11 * s + i * 2.3) * 240;
+          const k = 0.9 + Math.sin(time * 0.17 + i) * 0.14;
+          b.style.transform = `translate3d(${x}px, ${y}px, 0) scale(${k})`;
+        });
+
+        grid.style.transform = `translate3d(${(-time * 6) % 64}px, ${(-time * 3.5) % 64}px, 0)`;
+
+        /* ---- scene transition ----
+         * Cheap compositor-only handover: fade and a small scale/lift. No
+         * blur — a full-frame blur is what would cost frames here.
+         */
+        const inP = easeOut(elapsed / 0.5);
+        const outP = easeOut((beat.duration - elapsed) / 0.42);
+        const enter = Math.min(inP, outP);
+        scene.style.opacity = String(enter);
+        scene.style.transform = `translateY(${(1 - inP) * 26 - (1 - outP) * 18}px) scale(${
+          0.985 + 0.015 * inP - 0.012 * (1 - outP)
+        })`;
+
+        revealAll(revealEls, elapsed, beat.kind === 'table' ? { stagger: 0.09 } : {});
+
+        /* ---- cards ---- */
+        if (ruleEl) {
+          ruleEl.style.transform = `scaleX(${easeOut((elapsed - 0.35) / 0.8)})`;
+        }
+        if (shimmerEl) {
+          // The highlight crosses the wordmark once, early, then rests.
+          shimmerEl.style.backgroundPositionX = `${(1 - easeInOut(elapsed / 2.6)) * 100}%`;
+        }
+
+        /* ---- diagram ---- */
+        if (beat.kind === 'diagram') {
+          const arrows = scene.querySelectorAll('.arrow');
+          arrows.forEach((arrow, i) => {
+            const local = easeInOut((elapsed - 0.7 - i * 0.55) / 1.15);
+            arrow.querySelector('.fill').style.width = `${local * 100}%`;
+            const pip = arrow.querySelector('.pip');
+            pip.style.transform = `translateX(${local * arrow.clientWidth}px)`;
+            // Visible only while travelling.
+            pip.style.opacity = String(local > 0.001 && local < 0.999 ? 1 : 0);
+          });
+
+          // Published nodes light up as their value lands, then settle.
+          settleEls.forEach((node, i) => {
+            const at = 1.9 + i * 0.55;
+            node.querySelector('.halo').style.opacity = String(impulse(elapsed, at, 0.18, 1.5) * 0.9);
+            const value = node.dataset.settle;
+            node.querySelector('.hashval').textContent = scramble(value, elapsed, at - 0.9, 1.5);
+          });
+        }
+
+        /* ---- counters on the split panel ---- */
+        numEls.forEach((el, i) => {
+          const to = Number(el.dataset.to) || 0;
+          const e = easeOut((elapsed - 0.9 - i * 0.18) / 0.9);
+          el.textContent = String(Math.round(to * e));
+        });
+
+        /* ---- app footage ----
+         * A slow push-in, a settling 3D tilt, and a pan computed from the
+         * image's ACTUAL rendered height.
+         *
+         * The screenshot is taller than the frame it sits in (a 1440-wide page
+         * scaled to 1560 is well over 1000px tall in a 760px viewport), so a
+         * beat that wants to show the ledger panel has to travel a real
+         * distance — roughly 240px, not the token nudge a hand-picked constant
+         * gives you. `pan` is a fraction of the available overflow: 0 is the
+         * top of the page, 1 is the bottom.
+         */
+        let imageTop = 0;
+        let imageHeight = 0;
+        let imageWidth = 0;
+
+        if (imgEl) {
+          const frame = imgEl.closest('.browser');
+          const settle = easeOut(elapsed / 1.6);
+          frame.style.transform = `rotateY(${(1 - settle) * 7}deg) rotateX(${(1 - settle) * 2.4}deg) translateZ(${
+            (1 - settle) * -70
+          }px)`;
+
+          const zoom = 1 + 0.04 * easeInOut(p);
+          const viewport = imgEl.parentElement;
+          imageHeight = imgEl.offsetHeight * zoom;
+          imageWidth = imgEl.offsetWidth * zoom;
+          const overflow = Math.max(0, imageHeight - viewport.clientHeight);
+
+          // If this beat annotates something, derive the pan from where that
+          // element actually is, so it is guaranteed to end up in frame.
+          // Hand-set pan targets only apply when there is nothing measured to
+          // aim at — they cannot know where a panel ended up.
+          const aim = calloutEl ? JSON.parse(calloutEl.dataset.box) : undefined;
+          let from = beat.panFrom ?? 0;
+          let to = beat.panTo ?? from;
+          if (aim && overflow > 0) {
+            const centre = (aim.y + aim.h / 2) * imageHeight - viewport.clientHeight / 2;
+            to = clamp01(centre / overflow);
+            from = clamp01(to - 0.28);
+          }
+          const pan = from + (to - from) * easeInOut(elapsed / Math.max(beat.duration - 1.2, 0.1));
+          imageTop = -overflow * pan;
+          imgEl.style.transform = `scale(${zoom}) translateY(${imageTop / zoom}px)`;
+
+          if (sweepEl) {
+            sweepEl.style.transform = `translateX(${(easeInOut((elapsed - 0.6) / 2.4) * 2 - 1) * 100}%)`;
+          }
+        }
+
+        /* ---- callout ----
+         * Snaps in after the shot has had a moment to read, moves with the
+         * image so it stays on target through the pan, and breathes so the eye
+         * keeps returning to it.
+         */
+        if (calloutEl) {
+          const measured = JSON.parse(calloutEl.dataset.box);
+          calloutEl.style.left = `${measured.x * imageWidth}px`;
+          calloutEl.style.top = `${imageTop + measured.y * imageHeight}px`;
+          calloutEl.style.width = `${measured.w * imageWidth}px`;
+          calloutEl.style.height = `${measured.h * imageHeight}px`;
+
+          const e = easeOut((elapsed - 1.1) / 0.55);
+          calloutEl.style.opacity = String(e);
+          const breathe = 1 + Math.sin(elapsed * 2.4) * 0.012 * e;
+          calloutEl.style.transform = `scale(${breathe})`;
+
+          calloutEl.querySelectorAll('i').forEach((corner, i) => {
+            corner.style.transform = `scale(${easeOutBack((elapsed - 1.15 - i * 0.07) / 0.45)})`;
+          });
+
+          const tag = calloutEl.querySelector('.tag');
+          const te = easeOutBack((elapsed - 1.5) / 0.5);
+          tag.style.opacity = String(clamp01((elapsed - 1.5) / 0.3));
+          tag.style.transform = `scaleX(${Math.max(te, 0)})`;
+        }
+
+        /* ---- flash ---- */
+        flash.style.opacity = String(beat.flash ? impulse(elapsed, 1.5, 0.18, 1.8) * 0.5 : 0);
+
+        /* ---- caption ---- */
+        const capOut = easeOut((beat.duration - elapsed) / 0.32);
+        captionRule.style.transform = `scaleX(${easeOut((elapsed - 0.1) / 0.5)})`;
+        wordEls.forEach((el, i) => {
+          const wp = (elapsed - 0.18 - i * 0.028) / 0.42;
+          if (!(el._done && wp >= 1)) {
+            const e = easeOut(wp);
+            el.style.opacity = String(e);
+            el.style.transform = `translateY(${(1 - e) * 14}px)`;
+            el._done = wp >= 1;
+          }
+        });
+        captionEl.parentElement.style.opacity = String(capOut);
+
+        /* ---- chrome ---- */
+        const chapter = beat.chapter ?? '';
+        if (chapterEl.textContent !== chapter) chapterEl.textContent = chapter;
+        const che = easeOut(elapsed / 0.6);
+        chapterEl.style.opacity = String(Math.min(che, capOut));
+        chapterEl.style.transform = `translateX(${(1 - che) * -18}px)`;
+
+        dotEls.forEach((dot, i) => {
+          const active = i === index;
+          const w = active ? 12 + 22 * easeOut(elapsed / 0.5) : 12;
+          dot.style.width = `${w}px`;
+          dot.style.backgroundColor = active
+            ? accentOf(beat)
+            : i < index
+              ? 'rgba(180, 200, 255, 0.6)'
+              : 'rgba(180, 200, 255, 0.22)';
+        });
+
+        bar.style.width = `${(time / total) * 100}%`;
+      };
+
+      window.__seek = seek;
+      window.__meta = { fps: FPS, total, beats: BEATS.length };
+
+      /**
+       * Seek to `t` and resolve once the frame is ready to be photographed.
+       * This is what the offline renderer calls, once per frame.
+       *
+       * The only thing that has to be waited on is the shot image. Mounting a
+       * beat replaces the scene, and the fresh <img> reports zero height until
+       * its decode lands, even on a warm cache hit. Geometry derived from a
+       * zero-height image silently collapses the callout and disables the pan,
+       * so the frame is recomputed once the decode is in.
+       *
+       * There is deliberately no requestAnimationFrame wait here. CDP's
+       * captureScreenshot forces a commit of its own, so the style writes made
+       * during seek() are already on screen by the time the shot is taken —
+       * measured, not assumed: frames captured with and without a double-rAF
+       * settle are byte-identical. Waiting anyway cost ~68ms per frame, which
+       * is over half an hour across a full render.
+       *
+       * Nothing here reads a clock, so the frame at time `t` is identical no
+       * matter how long any of it took.
+       */
+      window.__renderFrame = async (t) => {
+        seek(t);
+
+        if (imgEl && !imgEl.complete) {
+          await imgEl.decode().catch(() => {});
+          seek(t);
+        }
+      };
+
+      /**
+       * Play the timeline in real time, driven by the animation frame clock.
+       *
+       * This is what the recorder uses: Playwright captures the page as it
+       * plays. `seek` stays the single source of truth for what a given moment
+       * looks like, so playback and frame-stepping can never disagree.
+       */
+      window.__play = () =>
+        new Promise((resolve) => {
+          const t0 = performance.now();
+          const step = (now) => {
+            const t = (now - t0) / 1000;
+            seek(t);
+            if (t >= total) {
+              seek(total - 0.001);
+              resolve(t);
+              return;
+            }
+            requestAnimationFrame(step);
+          };
+          requestAnimationFrame(step);
+        });
+
+      /**
+       * Preload every shot before anything is rendered or recorded.
+       *
+       * Scenes are built on demand, so without this the first frame of each app
+       * beat is laid out against an image of zero height — which silently
+       * collapses the callout and disables the pan.
+       */
+      const preload = () =>
+        Promise.all(
+          BEATS.filter((b) => b.shot).map(
+            (b) =>
+              new Promise((resolve) => {
+                const img = new Image();
+                img.addEventListener('load', resolve, { once: true });
+                img.addEventListener('error', resolve, { once: true });
+                img.src = `capture/${b.shot}`;
+              }),
+          ),
+        );
+
+      window.__ready = boxesReady
+        .then(preload)
+        .then(() => document.fonts.ready)
+        // Re-mount the current scene now that measured boxes and derived values
+        // have arrived, otherwise the first beat renders without them.
+        .then(() => {
+          currentIndex = -1;
+          seek(0);
+        });
+
+      seek(0);
+    </script>
+  </body>
+</html>
