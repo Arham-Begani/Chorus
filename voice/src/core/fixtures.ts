@@ -58,8 +58,14 @@ export function createMission(
   });
   const responses: Record<string, Terms[]> = {
     venue: [
-      term(600000, 'Courtyard hall, access from 17:30', { capacity: 50, readyAt: at(30) }),
-      term(550000, 'Earlier access available from 17:00', { capacity: 50, readyAt: at(60) }),
+      term(600000, 'Courtyard hall, access 30 minutes before the event', {
+        capacity: 50,
+        readyAt: at(30),
+      }),
+      term(550000, 'Earlier access available 60 minutes before the event', {
+        capacity: 50,
+        readyAt: at(60),
+      }),
       term(450000, 'Smaller hall; same capacity and earlier access', {
         capacity: 40,
         readyAt: at(60),

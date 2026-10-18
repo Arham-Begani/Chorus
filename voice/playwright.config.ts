@@ -12,7 +12,14 @@ export default defineConfig({
       name: 'desktop',
       use: { ...devices['Desktop Chrome'], viewport: { width: 1600, height: 1100 } },
     },
-    { name: 'mobile', use: { ...devices['iPhone 13'], defaultBrowserType: 'chromium' } },
+    {
+      name: 'mobile',
+      use: {
+        ...devices['iPhone 13'],
+        viewport: { width: 375, height: 812 },
+        defaultBrowserType: 'chromium',
+      },
+    },
   ],
   reporter: [['list'], ['html', { open: 'never' }]],
 });

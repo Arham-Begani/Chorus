@@ -1,5 +1,8 @@
 import 'dotenv/config';
 export const config = {
+  get supabaseKey() {
+    return process.env.SUPABASE_PUBLISHABLE_KEY || process.env.SUPABASE_ANON_KEY;
+  },
   get databaseUrl() {
     return process.env.DATABASE_URL || 'postgres://chorus:chorus_local_only@127.0.0.1:55432/chorus';
   },
@@ -54,8 +57,9 @@ export function readiness() {
       'BOLNA_WEBHOOK_SECRET',
       'BOLNA_TOOL_SECRET',
       'SUPABASE_URL',
-      'SUPABASE_ANON_KEY',
-    ].filter((k) => !process.env[k]),
+    ]
+      .filter((k) => !process.env[k])
+      .concat(config.supabaseKey ? [] : ['SUPABASE_PUBLISHABLE_KEY']),
     hasAllowlist: config.allowlist.length > 0,
   };
 }

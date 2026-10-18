@@ -50,9 +50,9 @@ export async function user(req: Request) {
   return data.user.id;
 }
 export function supabase() {
-  if (!process.env.SUPABASE_URL || !process.env.SUPABASE_ANON_KEY)
+  if (!process.env.SUPABASE_URL || !config.supabaseKey)
     throw new Error('Supabase credentials missing');
-  return createClient(process.env.SUPABASE_URL, process.env.SUPABASE_ANON_KEY, {
+  return createClient(process.env.SUPABASE_URL, config.supabaseKey, {
     auth: { persistSession: false, autoRefreshToken: false },
   });
 }

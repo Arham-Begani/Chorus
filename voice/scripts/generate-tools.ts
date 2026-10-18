@@ -1,4 +1,24 @@
 import { mkdirSync, writeFileSync } from 'node:fs';
+const privateExport = process.argv.includes('--private');
+const output = privateExport ? '.data/bolna' : 'integrations/generated';
+let origin = 'https://YOUR-HTTPS-HOST';
+let secret = 'REPLACE_WITH_BOLNA_TOOL_SECRET';
+if (privateExport) {
+  const url = new URL(process.env.CHORUS_CALLBACK_ORIGIN || process.env.APP_ORIGIN || '');
+  if (
+    url.protocol !== 'https:' ||
+    url.username ||
+    url.password ||
+    url.pathname !== '/' ||
+    url.search ||
+    url.hash
+  )
+    throw new Error('Set CHORUS_CALLBACK_ORIGIN to a public HTTPS origin');
+  if (!process.env.BOLNA_TOOL_SECRET || process.env.BOLNA_TOOL_SECRET.length < 32)
+    throw new Error('Set BOLNA_TOOL_SECRET to at least 32 random characters');
+  origin = url.origin;
+  secret = process.env.BOLNA_TOOL_SECRET;
+}
 const instructions: Record<string, string> = {
   propose_mission:
     'Draft the current mission from the owner’s spoken goal. JSON fields: key,title,goal,constraints with budgetMinor,currency INR,quantity,eventStart ISO with offset,timezone.',
@@ -32,13 +52,13 @@ const schema = (name: string) => ({
   key: 'custom_task',
   value: {
     method: 'POST',
-    url: `https://YOUR-HTTPS-HOST/api/tools/${name}`,
+    url: `${origin}/api/tools/${name}`,
     api_token: '',
-    headers: { 'x-chorus-tool-secret': 'REPLACE_WITH_BOLNA_TOOL_SECRET' },
+    headers: { 'x-chorus-tool-secret': secret },
     param: { token: '%(chorus_token)s', payload_json: '%(payload_json)s' },
   },
 });
-mkdirSync('integrations/generated', { recursive: true });
+mkdirSync(output, { recursive: true, mode: 0o700 });
 for (const [role, names] of Object.entries({
   conductor: [
     'propose_mission',
@@ -49,11 +69,12 @@ for (const [role, names] of Object.entries({
   ],
   phone: ['get_mission_brief', 'report_observation', 'submit_offer', 'request_clarification'],
 })) {
-  writeFileSync(
-    `integrations/generated/${role}-tools.json`,
-    JSON.stringify(names.map(schema), null, 2) + '\n',
-  );
+  writeFileSync(`${output}/${role}-tools.json`, JSON.stringify(names.map(schema), null, 2) + '\n', {
+    mode: 0o600,
+  });
 }
 console.log(
-  'Wrote placeholder tool definitions. Replace host and secret in the Bolna dashboard, never in committed source.',
+  privateExport
+    ? 'Wrote private tool definitions under ignored .data/bolna/. These contain a secret; import privately into Bolna only.'
+    : 'Wrote placeholder tool definitions. Replace host and secret in the Bolna dashboard, never in committed source.',
 );

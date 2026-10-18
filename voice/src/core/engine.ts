@@ -35,6 +35,14 @@ export function researchApproved(m: Mission) {
   );
 }
 export function requestApproval(m: Mission, kind: Approval['kind'], force = false) {
+  if (force)
+    for (const a of m.approvals)
+      if (
+        a.kind === kind &&
+        a.revision === m.revision &&
+        ['requested', 'approved'].includes(a.status)
+      )
+        a.status = 'stale';
   const key = kind === 'plan' ? evidenceKey(m) : '';
   const existing =
     !force &&
@@ -375,12 +383,36 @@ export function replan(m: Mission) {
 export function declineOffer(m: Mission, id: string) {
   const o = m.offers.find((o) => o.id === id);
   if (!o) throw new Error('Offer not found');
+  if (o.stale || o.declined || o.revision !== m.revision)
+    throw new Error('These terms are stale. Refresh the mission before deciding.');
   o.declined = true;
   const t = m.tasks.find((t) => t.id === o.taskId)!;
   t.state = t.rounds < 3 ? 'pending' : 'blocked';
   t.question = 'The user declined previous terms. Investigate an alternative without committing.';
   event(m, 'offer.declined', 'User declined an offer; alternatives required.', o.attemptId);
   evaluate(m);
+}
+export function retryTask(m: Mission, taskId: string) {
+  const task = m.tasks.find((t) => t.id === taskId);
+  if (!task) throw new Error('Task not found');
+  if (
+    m.status === 'paused' ||
+    m.attempts.some((a) => a.taskId === taskId && activeStatuses.includes(a.status))
+  )
+    throw new Error('Resolve the active/uncertain attempt or resume first');
+  for (const offer of m.offers) if (offer.taskId === taskId) offer.stale = true;
+  task.state = 'pending';
+  task.rounds = 0;
+  task.question =
+    'The owner requested fresh research. Reconfirm current terms without making a commitment.';
+  m.status = 'running';
+  requestApproval(m, 'research', true);
+  evaluate(m);
+  event(
+    m,
+    'task.retry',
+    `Another ${task.kind} research attempt is prepared; new authorization is required.`,
+  );
 }
 export function mergeStatus(current: Attempt['status'], next: Attempt['status']) {
   if (current === 'completed' || current === 'failed') return current;

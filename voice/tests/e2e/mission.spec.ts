@@ -2,7 +2,7 @@ import { test, expect } from '@playwright/test';
 test('mission lifecycle, revisions, evidence, refresh and approvals', async ({ page }, info) => {
   const errors: string[] = [];
   page.on('pageerror', (e) => errors.push(e.message));
-  await page.goto('/');
+  await page.goto('/app');
   await page.getByLabel('Password', { exact: true }).fill(process.env.DEMO_PASSWORD!);
   await page.getByRole('button', { name: 'Open mission control' }).click();
   await expect(page.locator('.topbar')).toBeVisible();
@@ -15,7 +15,7 @@ test('mission lifecycle, revisions, evidence, refresh and approvals', async ({ p
     page.getByRole('heading', { name: 'Bring the evening back together' }),
   ).toBeVisible();
   await expect(page.getByText('No phone calls are placed')).toBeAttached();
-  await expect(page.getByRole('button', { name: 'Talk to conductor' })).toBeDisabled();
+  await expect(page.getByRole('button', { name: 'Talk to conductor', exact: true })).toBeEnabled();
   await page.getByRole('button', { name: 'Authorize simulated research' }).click();
   await expect(page.getByRole('button', { name: 'Approve proposed plan' })).toBeVisible({
     timeout: 60000,
