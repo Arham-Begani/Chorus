@@ -27,10 +27,16 @@ import {
   Users,
   Utensils,
   X,
+  Download,
+  WifiOff,
+  Search,
 } from 'lucide-react';
 import type { BolnaWebCall } from '@bolna/web-call';
 import type { Mission, Offer, TaskKind, Terms } from '../core/types';
 import ConductorPanel from './conductor-panel';
+import { Brand } from './brand';
+import { ApiError, requestJSON as api } from '../client/api';
+import { exportBrief, missionGuidance, formatMoney as money } from '../core/presentation';
 type Ready = {
   realEnabled: boolean;
   missing: string[];
@@ -45,24 +51,8 @@ const icons = {
   equipment: Box,
   delivery: Truck,
 };
-const money = (v: number) =>
-  new Intl.NumberFormat('en-IN', {
-    style: 'currency',
-    currency: 'INR',
-    maximumFractionDigits: 0,
-  }).format(v / 100);
 const current = (m: Mission, id: string) =>
   [...m.offers].reverse().find((o) => o.taskId === id && !o.stale && !o.declined);
-async function api<T = unknown>(path: string, data?: unknown): Promise<T> {
-  const r = await fetch('/api/' + path, {
-    method: data === undefined ? 'GET' : 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: data === undefined ? undefined : JSON.stringify(data),
-  });
-  const v = await r.json();
-  if (!r.ok) throw new Error(v.error || 'Request failed');
-  return v;
-}
 function FlowNode({ data }: NodeProps) {
   const kind = data.kind as TaskKind | undefined;
   const Icon = kind ? icons[kind] : AudioLines;
@@ -185,53 +175,143 @@ export default function MissionControl() {
     [responseKind, setResponseKind] = useState<TaskKind>('venue'),
     [responseText, setResponseText] = useState(''),
     [callBudget, setCallBudget] = useState('300');
+  const [initializing, setInitializing] = useState(true),
+    [bootstrapError, setBootstrapError] = useState(''),
+    [syncError, setSyncError] = useState(''),
+    [lastSync, setLastSync] = useState<number | null>(null),
+    [missionSearch, setMissionSearch] = useState('');
   const call = useRef<BolnaWebCall | null>(null),
-    selected = useRef<string | null>(null);
+    selected = useRef<string | null>(null),
+    loadEpoch = useRef(0),
+    startApplied = useRef(false),
+    busyNow = useRef(busy),
+    editRevision = useRef<number | undefined>(undefined);
+  busyNow.current = busy;
   const load = useCallback(async () => {
-    const selectionAtStart = selected.current;
+    const epoch = ++loadEpoch.current;
     const items = await api<Mission[]>('missions');
-    if (selectionAtStart !== selected.current) return;
-    setMissions(items);
+    if (epoch !== loadEpoch.current) return;
     const requested =
       selected.current || new URLSearchParams(location.search).get('mission') || items[0]?.id;
-    const id = items.some((item) => item.id === requested) ? requested : items[0]?.id;
-    selected.current = id || null;
-    if (requested && requested !== id) history.replaceState(null, '', id ? `?mission=${id}` : '/');
+    let id =
+      requested && /^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/i.test(requested)
+        ? requested
+        : items[0]?.id;
+    let next: Mission | null = null;
     if (id) {
-      const next = await api<Mission>(`missions/${id}`);
-      if (selected.current === id) setM(next);
-    } else setM(null);
+      try {
+        next = await api<Mission>(`missions/${id}`);
+      } catch (e) {
+        if (!(e instanceof ApiError) || e.status !== 404) throw e;
+        id = items[0]?.id;
+        next = id ? await api<Mission>(`missions/${id}`) : null;
+      }
+    }
+    if (epoch !== loadEpoch.current) return;
+    selected.current = id || null;
+    if (requested && requested !== id)
+      history.replaceState(null, '', id ? `?mission=${id}` : '/app');
+    if (next && !items.some((item) => item.id === next.id)) items.unshift(next);
+    setMissions(items);
+    setM(next);
+    setSyncError('');
+    setLastSync(Date.now());
+    setInitializing(false);
   }, []);
-  useEffect(() => {
-    api<{ readiness: Ready }>('session')
-      .then((v) => {
-        setReady(v.readiness);
-        setAuthenticated(true);
-        return load();
-      })
-      .catch(() => setAuthenticated(false));
-    return () => {
-      void call.current?.stop();
-    };
+  const connect = useCallback(async () => {
+    setBootstrapError('');
+    try {
+      const session = await api<{ readiness: Ready }>('session');
+      setReady(session.readiness);
+      setAuthenticated(true);
+      await load();
+    } catch (e) {
+      if (e instanceof ApiError && e.status === 401) {
+        setAuthenticated(false);
+        setInitializing(false);
+      } else setBootstrapError((e as Error).message);
+    }
   }, [load]);
   useEffect(() => {
+    void connect();
+    const expired = () => {
+      setAuthenticated(false);
+      setInitializing(false);
+      setModal(null);
+      setError('Your session ended. Sign in again to continue.');
+      void call.current?.stop();
+    };
+    window.addEventListener('chorus:session-expired', expired);
+    return () => {
+      void call.current?.stop();
+      window.removeEventListener('chorus:session-expired', expired);
+    };
+  }, [connect]);
+  useEffect(() => {
+    if (!authenticated || initializing || startApplied.current) return;
+    startApplied.current = true;
+    const params = new URLSearchParams(location.search),
+      start = params.get('start');
+    if (start) {
+      params.delete('start');
+      history.replaceState(null, '', `/app${params.size ? '?' + params.toString() : ''}`);
+      if (start === 'conductor') setModal('conductor');
+      if (start === 'relocation' || start === 'equipment') {
+        setScenario(start);
+        setModal('new');
+      }
+    }
+  }, [authenticated, initializing]);
+  useEffect(() => {
     if (!authenticated) return;
-    let running = false;
-    const timer = setInterval(async () => {
-      if (running) return;
+    let running = false,
+      stopped = false,
+      failures = 0;
+    let timer: ReturnType<typeof setTimeout>;
+    const refresh = async () => {
+      if (running || stopped) return;
+      if (document.hidden) {
+        timer = setTimeout(refresh, 5000);
+        return;
+      }
+      if (!navigator.onLine) {
+        setSyncError('You appear to be offline. Reconnect to receive new updates.');
+        timer = setTimeout(refresh, 5000);
+        return;
+      }
       running = true;
       try {
         await load();
+        failures = 0;
       } catch (e) {
-        setError((e as Error).message);
+        failures++;
+        setSyncError((e as Error).message);
       } finally {
         running = false;
+        if (!stopped) timer = setTimeout(refresh, Math.min(1500 * 2 ** failures, 15000));
       }
-    }, 1500);
-    return () => clearInterval(timer);
+    };
+    const wake = () => {
+      if (!document.hidden) {
+        clearTimeout(timer);
+        failures = 0;
+        void refresh();
+      }
+    };
+    timer = setTimeout(refresh, 1500);
+    window.addEventListener('online', wake);
+    document.addEventListener('visibilitychange', wake);
+    return () => {
+      stopped = true;
+      clearTimeout(timer);
+      window.removeEventListener('online', wake);
+      document.removeEventListener('visibilitychange', wake);
+      ++loadEpoch.current;
+    };
   }, [authenticated, load]);
   useEffect(() => {
     if (!modal && !drawer) return;
+    if (modal === 'constraints') editRevision.current = m?.revision;
     const previous = document.activeElement as HTMLElement | null;
     const overflow = document.body.style.overflow;
     document.body.style.overflow = 'hidden';
@@ -241,6 +321,7 @@ export default function MissionControl() {
     dialog?.querySelector<HTMLElement>(selector)?.focus();
     const handler = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
+        if (busyNow.current && modal === 'conductor') return;
         setModal(null);
         setDrawer(false);
       }
@@ -295,16 +376,29 @@ export default function MissionControl() {
   }
   const action = (name: string, data: unknown = {}) =>
     run(async () => {
+      ++loadEpoch.current;
       const next = await api<Mission>(`missions/${selected.current}/${name}`, data);
       setM(next);
-      await load();
+      await load().catch((e) => setSyncError((e as Error).message));
     });
   function choose(id: string) {
     void call.current?.stop();
     setVoiceState('idle');
     selected.current = id;
+    ++loadEpoch.current;
     history.replaceState(null, '', `?mission=${id}`);
     void run(load);
+  }
+  async function logout() {
+    await run(async () => {
+      await api('logout', {});
+      setM(null);
+      setMissions([]);
+      selected.current = null;
+      setModal(null);
+      void call.current?.stop();
+      setAuthenticated(false);
+    });
   }
   async function login(e: React.FormEvent) {
     e.preventDefault();
@@ -313,8 +407,12 @@ export default function MissionControl() {
       setPassword('');
       const session = await api<{ readiness: Ready }>('session');
       setReady(session.readiness);
+      setInitializing(true);
       setAuthenticated(true);
-      await load();
+      await load().catch((e) => {
+        setBootstrapError((e as Error).message);
+        throw e;
+      });
     });
   }
   async function create(e: React.FormEvent) {
@@ -326,8 +424,32 @@ export default function MissionControl() {
       setM(next);
       setModal(null);
       setGoal('');
-      await load();
+      await load().catch((e) => setSyncError((e as Error).message));
     });
+  }
+  function downloadBrief() {
+    if (!m) return;
+    const blob = new Blob([exportBrief(m)], { type: 'text/markdown;charset=utf-8' }),
+      url = URL.createObjectURL(blob),
+      a = document.createElement('a');
+    a.href = url;
+    a.download = `chorus-${m.id.slice(0, 8)}-revision-${m.revision}.md`;
+    a.click();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+    setNotice('Your brief was exported with the current terms and source references.');
+  }
+  function reviewDecisions() {
+    setModal(null);
+    setTimeout(() => {
+      const section = document.getElementById('decisions');
+      section?.scrollIntoView({
+        behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches
+          ? 'instant'
+          : 'smooth',
+        block: 'start',
+      });
+      section?.focus({ preventScroll: true });
+    }, 0);
   }
   async function voice() {
     await run(async () => {
@@ -384,29 +506,53 @@ export default function MissionControl() {
   const pending =
     m?.approvals.filter((a) => a.status === 'requested' && a.revision === m.revision) || [];
   const meaningful = m?.conflicts.filter((c) => c.kind !== 'missing') || [];
-  if (authenticated === null)
+  const guidance = m ? missionGuidance(m) : null;
+  const filteredMissions = missions.filter((item) =>
+    (item.title + ' ' + item.goal + ' ' + item.scenario)
+      .toLowerCase()
+      .includes(missionSearch.toLowerCase()),
+  );
+  if (bootstrapError)
     return (
-      <div className="loading">
-        <AudioLines /> Connecting to mission control…
-      </div>
+      <main className="connection-screen">
+        <Brand />
+        <div>
+          <WifiOff size={28} />
+          <h1>Let’s reconnect your workspace.</h1>
+          <p>{bootstrapError}</p>
+          <button className="primary" onClick={() => void connect()}>
+            <RefreshCw size={16} />
+            Try again
+          </button>
+          <a href="/" className="text-button">
+            Back to CHORUS
+          </a>
+        </div>
+      </main>
+    );
+  if (authenticated === null || (authenticated && initializing))
+    return (
+      <main className="workspace-loading" aria-busy="true" aria-label="Loading mission control">
+        <Brand />
+        <div className="loading-skeleton">
+          <span />
+          <span />
+          <div />
+          <div />
+        </div>
+        <p role="status">Opening your workspace…</p>
+      </main>
     );
   if (!authenticated)
     return (
       <main className="login-shell">
         <div className="login-brand">
-          <span className="brand-icon">
-            <AudioLines size={28} />
-          </span>{' '}
-          CHORUS
+          <Brand />
         </div>
         <form onSubmit={login} className="login-panel">
           <span className="eyebrow">MISSION CONTROL</span>
-          <h1>
-            One goal.
-            <br />
-            Many conversations.
-          </h1>
-          <p>Coordinate the details. Keep the decisions yours.</p>
+          <h1>Welcome to your workspace.</h1>
+          <p>Bring the moving parts together. Pick up where you left off.</p>
           <label>
             Email
             <input
@@ -442,12 +588,7 @@ export default function MissionControl() {
   return (
     <div className="app-shell">
       <aside className="sidebar">
-        <a className="brand" href="/">
-          <span className="brand-icon">
-            <AudioLines size={22} />
-          </span>{' '}
-          CHORUS
-        </a>
+        <Brand />
         <div className="workspace-label">
           <span className="avatar">Y</span>
           <div>
@@ -466,44 +607,66 @@ export default function MissionControl() {
         </button>
         <div className="side-section">
           <span className="nav-label">YOUR MISSIONS</span>
+          {missions.length > 3 && (
+            <label className="mission-search">
+              <Search size={14} />
+              <input
+                aria-label="Search missions"
+                value={missionSearch}
+                onChange={(e) => setMissionSearch(e.target.value)}
+                placeholder="Search missions…"
+              />
+            </label>
+          )}
           {missions.length === 0 ? (
             <p className="caption">Your first mission starts here.</p>
           ) : (
-            missions.map((item) => (
+            filteredMissions.map((item) => (
               <button
                 key={item.id}
+                disabled={busy}
                 onClick={() => choose(item.id)}
                 className={`mission-link ${m?.id === item.id ? 'chosen' : ''}`}
               >
                 <span className={`tiny-dot ${item.status}`} />
                 <span>
-                  {item.scenario === 'relocation' ? 'Event relocation' : 'Equipment & delivery'}
+                  <strong>
+                    {item.scenario === 'relocation' ? 'Event relocation' : 'Equipment & delivery'}
+                  </strong>
+                  <small>
+                    {item.id.slice(0, 6)} · Rev {item.revision} · {item.status}
+                  </small>
                 </span>
                 <ChevronRight size={12} />
               </button>
             ))
           )}
+          {missions.length > 0 && filteredMissions.length === 0 && (
+            <p className="caption">
+              No missions match.{' '}
+              <button className="text-button" onClick={() => setMissionSearch('')}>
+                Clear search
+              </button>
+            </p>
+          )}
         </div>
         <div className="sidebar-bottom">
           <div className="connection">
-            <span className="tiny-dot ready" /> PostgreSQL connected
+            <span className={`tiny-dot ${syncError ? 'blocked' : 'ready'}`} />{' '}
+            {syncError ? 'Reconnecting…' : 'Workspace connected'}
           </div>
           <small>{ready?.authMode}</small>
-          <button
-            className="nav-item"
-            onClick={() =>
-              run(async () => {
-                await api('logout', {});
-                setAuthenticated(false);
-              })
-            }
-          >
+          <button className="nav-item" onClick={logout}>
             Sign out <ArrowUpRight size={14} />
           </button>
         </div>
       </aside>
       <div className="app-body">
         <header className="topbar">
+          <a className="mobile-brand" href="/" aria-label="CHORUS home">
+            <AudioLines size={18} />
+            CHORUS
+          </a>
           <div>
             <Network size={15} />
             <span>Workspace</span>
@@ -526,6 +689,58 @@ export default function MissionControl() {
           </span>
         </header>
         <main id="mission" className="main-content">
+          {missions.length > 0 && (
+            <div className="mobile-mission-switch">
+              <label htmlFor="mission-switch">Your missions</label>
+              <select
+                id="mission-switch"
+                value={m?.id || ''}
+                disabled={busy}
+                onChange={(e) => choose(e.target.value)}
+              >
+                {missions.map((item) => (
+                  <option value={item.id} key={item.id}>
+                    {item.scenario === 'relocation' ? 'Event relocation' : 'Equipment & delivery'} ·{' '}
+                    {item.id.slice(0, 6)} · Rev {item.revision}
+                  </option>
+                ))}
+              </select>
+              <details className="workspace-menu">
+                <summary aria-label="Workspace menu">
+                  <Users size={18} />
+                </summary>
+                <div>
+                  <a href="/">
+                    CHORUS home <ArrowUpRight size={14} />
+                  </a>
+                  <button onClick={logout} disabled={busy}>
+                    Sign out <ArrowUpRight size={14} />
+                  </button>
+                </div>
+              </details>
+            </div>
+          )}
+          {syncError && (
+            <div className="sync-banner" role="status">
+              <WifiOff size={16} />
+              <div>
+                <strong>Showing your last saved view.</strong>
+                <span>
+                  {syncError}
+                  {lastSync
+                    ? ` Last synced ${new Date(lastSync).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })}.`
+                    : ''}
+                </span>
+              </div>
+              <button
+                className="secondary"
+                onClick={() => void load().catch((e) => setSyncError((e as Error).message))}
+              >
+                <RefreshCw size={14} />
+                Reconnect
+              </button>
+            </div>
+          )}
           {error && (
             <div className="alert error" role="alert">
               {error}
@@ -592,6 +807,10 @@ export default function MissionControl() {
                   </div>
                 </div>
                 <div className="heading-actions">
+                  <button className="secondary" onClick={downloadBrief}>
+                    <Download size={14} />
+                    Export brief
+                  </button>
                   <span className={`status-pill ${m.status}`}>
                     <span className="tiny-dot" />
                     {
@@ -617,6 +836,63 @@ export default function MissionControl() {
                   )}
                 </div>
               </section>
+              {guidance && (
+                <section className={`next-step ${m.status}`} aria-label="Your next step">
+                  <span className="next-step-icon">
+                    <ShieldCheck size={20} />
+                  </span>
+                  <div>
+                    <span className="eyebrow">
+                      {m.status === 'ready' ? 'READY FOR REVIEW' : 'YOUR NEXT STEP'}
+                    </span>
+                    <h2>{guidance.title}</h2>
+                    <p>{guidance.detail}</p>
+                  </div>
+                  <button
+                    className="secondary"
+                    disabled={busy}
+                    onClick={() => {
+                      if (guidance.kind === 'resume') void action('resume');
+                      else if (guidance.kind === 'decisions') reviewDecisions();
+                      else if (guidance.kind === 'export') downloadBrief();
+                      else if (guidance.kind === 'conductor') setModal('conductor');
+                      else
+                        document.getElementById('conversations')?.scrollIntoView({
+                          block: 'start',
+                          behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches
+                            ? 'instant'
+                            : 'smooth',
+                        });
+                    }}
+                  >
+                    {guidance.action}
+                    <ArrowUpRight size={14} />
+                  </button>
+                </section>
+              )}
+              <div className="mission-summary" aria-label="Mission summary">
+                <div>
+                  <span>Current terms</span>
+                  <strong>
+                    {m.tasks.filter((t) => !!current(m, t.id)).length}
+                    <small> / {m.tasks.length} received</small>
+                  </strong>
+                </div>
+                <div>
+                  <span>Quoted total</span>
+                  <strong>
+                    {money(m.plan.totalMinor)}
+                    <small> of {money(m.constraints.budgetMinor)}</small>
+                  </strong>
+                </div>
+                <div>
+                  <span>Open checks</span>
+                  <strong>
+                    {m.conflicts.length}
+                    <small>{m.plan.feasible ? ' all checks pass' : ' to resolve'}</small>
+                  </strong>
+                </div>
+              </div>
               <section className="conductor-bar">
                 <div
                   className={`conductor-orb ${voiceState === 'active' ? 'speaking' : ''}`}
@@ -720,7 +996,7 @@ export default function MissionControl() {
                       </div>
                     </section>
                   )}
-                  <section className="contact-section">
+                  <section className="contact-section" id="conversations">
                     <div className="section-heading">
                       <h2>Conversations</h2>
                       <button className="text-button" onClick={() => setModal('contacts')}>
@@ -960,7 +1236,7 @@ export default function MissionControl() {
                       {m.constraints.timezone}. Setup time is checked against this deadline.
                     </p>
                   </section>
-                  <section className="approval-section">
+                  <section className="approval-section" id="decisions" tabIndex={-1}>
                     <div className="section-heading">
                       <h2>Your decisions</h2>
                       <span className="count">{pending.length}</span>
@@ -1186,7 +1462,9 @@ export default function MissionControl() {
       {modal && (
         <div
           className="modal-backdrop"
-          onClick={() => setModal(null)}
+          onClick={() => {
+            if (!busyNow.current) setModal(null);
+          }}
           onKeyDown={(e) => {
             if (e.key === 'Escape') setModal(null);
           }}
@@ -1205,7 +1483,7 @@ export default function MissionControl() {
                       ? 'Mission contacts'
                       : 'Business responses'
             }
-            className="modal"
+            className={`modal ${modal === 'conductor' ? 'conductor-modal' : ''}`}
             onClick={(e) => e.stopPropagation()}
           >
             <div className="modal-header">
@@ -1224,6 +1502,7 @@ export default function MissionControl() {
                 className="icon-button"
                 aria-label="Close dialog"
                 onClick={() => setModal(null)}
+                disabled={busy && modal === 'conductor'}
               >
                 <X size={18} />
               </button>
@@ -1232,11 +1511,15 @@ export default function MissionControl() {
               <ConductorPanel
                 mission={m}
                 providerActive={['active', 'ringing', 'connecting'].includes(voiceState)}
+                onRefresh={load}
+                onReview={reviewDecisions}
+                onBusyChange={setBusy}
                 onMission={async (next) => {
                   selected.current = next.id;
                   history.replaceState(null, '', `?mission=${next.id}`);
                   setM(next);
-                  await load();
+                  ++loadEpoch.current;
+                  await load().catch((e) => setSyncError((e as Error).message));
                 }}
               />
             )}
@@ -1290,6 +1573,7 @@ export default function MissionControl() {
                   const form = new FormData(e.currentTarget);
                   void run(async () => {
                     const next = await api<Mission>(`missions/${m.id}/revise`, {
+                      revision: editRevision.current,
                       constraints: {
                         ...m.constraints,
                         budgetMinor: Math.round(Number(form.get('budget')) * 100),
@@ -1301,7 +1585,7 @@ export default function MissionControl() {
                     });
                     setM(next);
                     setModal(null);
-                    await load();
+                    await load().catch((e) => setSyncError((e as Error).message));
                   });
                 }}
               >

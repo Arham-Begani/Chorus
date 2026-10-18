@@ -2,7 +2,15 @@
 
 Date: 2026-10-18. Native Windows, Node 24.19.0, PostgreSQL 17.6. Dependencies are exact versions in package-lock.json; Next.js 16.4.2, React 19.3.1, pg-boss 12.38.0, Bolna Web Call SDK 3.0.1. The native PostgreSQL 18 package crashed during initialization; the dev helper was pinned to 17.6, which initialized and ran successfully. No system virtualization settings were changed.
 
-## Browser conductor completion — latest local verification
+## Landing, workspace and recovery pass — latest verification
+
+The public landing page and interactive illustrative example are separate from the authenticated /app workspace. The workspace adds next-step guidance, term/budget/check summaries, mobile navigation, mission search, sourced brief export and a fixed conductor composer. The palette uses the existing dark neutral tokens with one cyan accent; dependency edges remain distinguished by their dashed pattern. No fake customers, metrics, live audio or provider execution are presented.
+
+Typecheck, **52 unit tests**, **9 PostgreSQL integration tests** and the optimized build passed. **All 22 desktop/mobile browser tests passed**. Expanded browser checks cover the public example/FAQ/entry, lost responses after an actual database commit (same command replay), stale command recovery, real API stale-form rejection, saved mission URLs outside the returned list, brief downloads, retained cached views after network failure, denied/stalled recognition and sign-in limiter success/failure behavior. Desktop viewport: 1600×1100; mobile emulation: 375×812. Landing and conductor screenshots were inspected. Quote formatting preserves paise; its unit test covers a fractional quote, a whole-rupee quote and zero. After the final alert-clear and quote-format polish, the production build, all 52 unit tests and four focused desktop/mobile landing and stale-revision tests passed again.
+
+Recognition remains a protocol test double; no hardware microphone quality or Bolna execution proof is claimed. Docker runtime and permanent hosting remain unverified on this Windows host. No schema, account permissions, billing, auth method or real-call switches changed in this pass.
+
+## Earlier browser conductor completion
 
 - Typecheck passed. All **43 unit tests** and **9 PostgreSQL integration tests** passed, including real worker process replacement.
 - **8 desktop/mobile browser tests passed** against the optimized production build. These cover mission lifecycle, both mission templates, natural typed creation/revision, pause/resume, restored conductor history, explicit research/plan approvals, evidence, refresh, graph visibility, viewport overflow and unauthenticated rejection.

@@ -2,8 +2,14 @@ import { createHmac } from 'node:crypto';
 import { z } from 'zod';
 import { conductorIntent, missionSummary } from '../core/conductor';
 import { createMission, defaultConstraints } from '../core/fixtures';
-import { event, evaluate, requestApproval, researchApproved, revise } from '../core/engine';
-import { activeStatuses, type Mission } from '../core/types';
+import {
+  event,
+  evaluate,
+  requestApproval,
+  researchApproved,
+  revise,
+  retryTask,
+} from '../core/engine';
 import { getMission, insert, mutate, publicMission } from './db';
 import { config } from './config';
 const inputSchema = z
@@ -106,19 +112,7 @@ export async function conduct(owner: string, raw: unknown) {
       case 'retry': {
         const t = m.tasks.find((t) => t.kind === command.taskKind);
         if (!t) throw new Error('That task is not part of this mission.');
-        if (
-          m.status === 'paused' ||
-          m.attempts.some((a) => a.taskId === t.id && activeStatuses.includes(a.status))
-        )
-          throw new Error(
-            'Resume or resolve the active/uncertain attempt before retrying this task.',
-          );
-        t.state = 'pending';
-        m.status = 'running';
-        for (const a of m.approvals.filter((a) => a.kind === 'research' && a.status === 'approved'))
-          a.status = 'stale';
-        requestApproval(m, 'research', true);
-        event(m, 'task.retry', `Owner requested another ${t.kind} research attempt.`);
+        retryTask(m, t.id);
         message = `Another ${t.kind} attempt is prepared. Review the new research approval card before it starts.`;
         break;
       }

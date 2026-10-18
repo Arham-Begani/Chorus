@@ -38,6 +38,12 @@ const numberPhrase = new RegExp(
 export function normalizeSpeech(text: string) {
   return text
     .toLowerCase()
+    .replace(/[’‘]/g, "'")
+    .replace(
+      /\b(one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve)\s+(fifteen|thirty|forty[ -]five)\s*(?=[ap]\.?\s*m\b)/g,
+      (_, h: string, m: string) =>
+        `${ones[h]}:${m === 'fifteen' ? '15' : m === 'thirty' ? '30' : '45'} `,
+    )
     .replace(/(?<=\d),(?=\d)/g, '')
     .replace(numberPhrase, (phrase) => {
       let total = 0,
@@ -125,7 +131,9 @@ export function goalConstraints(text: string, base: Constraints, now = new Date(
     );
     changed.push('budget');
   }
-  if (/\b(?:budget|spending|under|within|up to)\b[^\d.]{0,20}-\s*\d/.test(s))
+  if (
+    /\b(?:budget|spending|under|within|up to)\b[^\d.]{0,20}-\s*\d|(?:₹|inr|rs\.?)\s*-\s*\d/.test(s)
+  )
     throw new Error('Budget cannot be negative.');
   if (
     /\b\d+\.\d+\s+(?:people|guests|persons|attendees|units)\b|(?:^|\s)-\d+\s+(?:people|guests|persons|attendees|units)\b/.test(
@@ -186,7 +194,9 @@ export function goalConstraints(text: string, base: Constraints, now = new Date(
   const clock =
     s.match(
       /\b(?:at|by|starts?(?: at)?|begins?(?: at)?|deadline(?: to| is)?|start time(?: to| is)?)\s+(\d{1,2})(?::(\d{2}))?\s*(am|pm)\b/,
-    ) || s.match(/\b(?:at|by|starts? at|deadline(?: to| is)?)\s+(\d{1,2}):(\d{2})\b/);
+    ) ||
+    s.match(/\b(?:at|by|starts? at|deadline(?: to| is)?)\s+(\d{1,2}):(\d{2})\b/) ||
+    s.match(/\b(\d{1,2})(?::(\d{2}))?\s*(am|pm)\b/);
   if (clock) {
     hour = Number(clock[1]);
     minute = Number(clock[2] || 0);
@@ -194,7 +204,9 @@ export function goalConstraints(text: string, base: Constraints, now = new Date(
       throw new Error('Use a valid time such as 6 pm or 18:00.');
     if (clock[3]) hour = (hour % 12) + (clock[3] === 'pm' ? 12 : 0);
     hasTime = true;
-  } else if (/\b(?:starts? at|start time(?: to| is)?)\s+\d{1,2}\b/.test(s))
+  } else if (
+    /\b(?:at|by|starts? at|start time(?: to| is)?|deadline(?: to| is)?)\s+\d{1,2}\b/.test(s)
+  )
     throw new Error('Please include am or pm, or use a 24-hour time such as 18:00.');
   const iso = text.match(
     /\b\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:\d{2})\b/i,
@@ -234,13 +246,17 @@ export function conductorIntent(
   const s = normalizeSpeech(text)
     .trim()
     .replace(/^please\s+/, '')
+    .replace(
+      /^(?:can|could|would|will) you (?:please )?(?=(?:lower|reduce|increase|change|set|move|revise|pause|resume|retry|find|rent|create|start|begin)\b)/,
+      '',
+    )
     .replace(/[.!?]+$/, '');
   if (/\b(?:don't|do not|never)\b/.test(s)) return { kind: 'help' };
   if (/^(?:what|why|how|can|could|would|do|does|is|are)\b/.test(s))
     return { kind: mission ? 'status' : 'help' };
   const newGoal =
     !mission ||
-    /\b(?:new mission|create (?:a |an )?mission|our venue (?:has )?cancelled|find (?:an? )?(?:alternative |replacement )?venue|rent (?:sound |audio )?equipment)\b/.test(
+    /\b(?:new (?:(?:equipment|relocation|event) )?mission|create (?:a |an )?mission|our venue (?:has )?cancelled|find (?:an? )?(?:alternative |replacement )?venue|rent (?:sound |audio )?equipment|i need (?:an? )?venue)\b/.test(
       s,
     );
   if (

@@ -1,6 +1,6 @@
 import { test, expect } from '@playwright/test';
 async function login(page: import('@playwright/test').Page) {
-  await page.goto('/');
+  await page.goto('/app');
   await page.getByLabel('Password', { exact: true }).fill(process.env.DEMO_PASSWORD!);
   await page.getByRole('button', { name: 'Open mission control' }).click();
   await expect(page.locator('.topbar')).toBeVisible();

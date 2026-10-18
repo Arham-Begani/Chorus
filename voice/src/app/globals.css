@@ -11,7 +11,7 @@
   --strong: #637b8e;
   --accent: #87d4dd;
   --accent-dim: #192f35;
-  --coordination: #b2a1de;
+  --coordination: #87d4dd;
   --warning: #efbf76;
   --warning-bg: #292219;
   --danger: #f0a0a1;
@@ -26,6 +26,9 @@
   --space-6: 24px;
   --space-8: 32px;
   --space-12: 48px;
+  --space-16: 64px;
+  --space-24: 96px;
+  --space-32: 128px;
   --font-sans:
     -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Segoe UI Variable', 'Segoe UI', Inter,
     system-ui, sans-serif;

@@ -13,6 +13,7 @@ import {
   event,
   requestApproval,
   revise,
+  retryTask,
 } from '../../../core/engine';
 import { constraintsSchema, kindSchema, termsSchema, type Mission } from '../../../core/types';
 import { BolnaAdapter } from '../../../providers/bolna';
@@ -20,6 +21,7 @@ import { applyExecution } from '../../../server/coordinator';
 import { executeTool } from '../../../server/tools';
 import { conduct } from '../../../server/conductor';
 import { goalConstraints } from '../../../core/conductor';
+import { requestError } from '../../../server/request-error';
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 const json = (v: unknown, status = 200) =>
@@ -57,6 +59,7 @@ async function handle(req: Request, { params }: { params: Promise<{ path: string
           throw new Error('Local login requires loopback');
         if (!process.env.DEMO_PASSWORD || !equal(data.password, process.env.DEMO_PASSWORD))
           return json({ error: 'Incorrect password' }, 401);
+        loginAttempts.delete(ip);
         const response = json({ ok: true });
         response.cookies.set(
           'chorus_session',
@@ -76,6 +79,7 @@ async function handle(req: Request, { params }: { params: Promise<{ path: string
         password: data.password,
       });
       if (error || !session.session) return json({ error: 'Sign-in failed' }, 401);
+      loginAttempts.delete(ip);
       const response = json({ ok: true });
       response.cookies.set('chorus_access', session.session.access_token, {
         httpOnly: true,
@@ -220,9 +224,17 @@ async function handle(req: Request, { params }: { params: Promise<{ path: string
         }
         case 'revise': {
           const input = z
-            .object({ constraints: constraintsSchema, reason: z.string().min(1).max(1000) })
+            .object({
+              revision: z.number().int().positive(),
+              constraints: constraintsSchema,
+              reason: z.string().min(1).max(1000),
+            })
             .strict()
             .parse(data);
+          if (input.revision !== m.revision)
+            throw new Error(
+              'The mission changed. Close this form and review the latest revision before editing again.',
+            );
           revise(m, input.constraints, input.reason);
           break;
         }
@@ -263,29 +275,7 @@ async function handle(req: Request, { params }: { params: Promise<{ path: string
           break;
         }
         case 'retry': {
-          const t = m.tasks.find((t) => t.id === data.taskId);
-          if (!t) throw new Error('Task not found');
-          if (
-            m.status === 'paused' ||
-            m.attempts.some(
-              (a) =>
-                a.taskId === t.id &&
-                [
-                  'dispatching',
-                  'uncertain',
-                  'queued',
-                  'initiated',
-                  'ringing',
-                  'in-progress',
-                  'call-disconnected',
-                ].includes(a.status),
-            )
-          )
-            throw new Error('Resolve the active/uncertain attempt or resume first');
-          t.state = 'pending';
-          m.status = 'running';
-          requestApproval(m, 'research');
-          event(m, 'task.retry', 'User requested another research attempt.');
+          retryTask(m, z.uuid().parse(data.taskId));
           break;
         }
         case 'contact': {
@@ -338,12 +328,8 @@ async function handle(req: Request, { params }: { params: Promise<{ path: string
     });
     return json(publicMission(await getMission(id, owner)));
   } catch (e) {
-    const message =
-      e instanceof z.ZodError
-        ? 'Invalid request: ' + e.issues.map((x) => x.message).join('; ')
-        : (e as Error).message;
-    const auth = /Sign in|Session|token|authentication|scope|Origin|loopback/i.test(message);
-    return json({ error: message }, auth ? 401 : message === 'Mission not found' ? 404 : 400);
+    const { status, ...failure } = requestError(e);
+    return json(failure, status);
   }
 }
 export { handle as GET, handle as POST };

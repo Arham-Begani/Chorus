@@ -34,7 +34,7 @@ npm run dev
 npm run worker
 ```
 
-Open **http://localhost:3000**. Sign in and choose **Talk to conductor**. Type or use the microphone to say “Our venue cancelled. Find a venue for 40 people tomorrow at 6 pm under 12000 rupees.” Review the draft and contacts, close the conductor, and authorize simulated research. Watch the setup conflict, earlier-access investigation and evidence log. Reopen the conductor and say or type “Lower the budget to nine thousand rupees”; authorize research for the new revision and review the recalculated plan. Approving a plan records preference and performs no purchase, reservation or cancellation.
+Open **http://localhost:3000** for the landing page and interactive illustrative example. Choose **Open workspace** to reach **/app**, sign in, then choose **Talk to conductor**. Type or use the microphone to say “Our venue cancelled. Find a venue for 40 people tomorrow at 6 pm under 12000 rupees.” Review the draft and contacts; **Review research approval** takes you to the actual authorization card. Watch the setup conflict, earlier-access investigation and evidence log. Reopen the conductor and say or type “Lower the budget to nine thousand rupees”; authorize research for the new revision and review the recalculated plan. Approving a plan records preference and performs no purchase, reservation or cancellation. Existing `/?mission=<id>` links redirect to `/app?mission=<id>`.
 
 The conductor also accepts “Pause”, “Resume”, “What is blocking the plan?”, “Start research” (opens the approval step), and “Retry venue”. Create the second scenario with “Rent sound equipment and arrange delivery for 40 people tomorrow at 7 pm under 8000 rupees”. Budgets support INR, spoken numbers and `k`/`lakh`; dates support today, tomorrow, weekday or YYYY-MM-DD, with am/pm or 24-hour time. Explicit forms remain available for precise edits. Only the two supported mission templates and listed commands are interpreted; this browser controller is deterministic, not a general-purpose conversational model.
 
@@ -43,6 +43,14 @@ Microphone input uses the browser's SpeechRecognition implementation where avail
 Simulation agents use configurable business offers and the same durable engine/tool events as real agents. To change responses, pause, open Business responses and edit a business's JSON terms. Prices are integer paise; times are ISO instants with an offset. `[]` means the business declines. Empty responses or impossible terms produce a blocked plan. Resume after editing. A second mission type covers equipment rental plus delivery and setup.
 
 Keyboard: **N** opens a new mission; Escape closes dialogs. Dialog focus is trapped and restored. Mobile has a plus control in the header. Reduced-motion preferences disable graph-edge animation.
+
+## Recovery and navigation
+
+Mission control puts the next decision above the graph and links directly to the approval card. Its summary shows terms received, quoted total and unresolved checks. Search recent missions in the sidebar; on mobile use the mission selector and workspace menu. A saved mission URL still opens when its mission falls outside the recent list. **Export brief** downloads the current constraints, terms, sources, mode and open checks; incomplete evidence stays explicit.
+
+The conductor uses a fixed composer and scrolling conversation, with visible close/microphone controls on small screens. Suggested commands only fill the draft; sending remains explicit. Ctrl/⌘ + Enter sends a typed request. Recognized voice text stays editable if the request fails. A lost response offers **Retry message**, reusing the exact command key and revision so a committed mission or revision is not duplicated. A stale revision offers **Load latest mission** before the user sends again. Requests time out after 15 seconds; a microphone that never starts stops after 12 seconds, and listening ends after 45 seconds without a final result. These limits do not terminate business calls.
+
+Failed refreshes retain the last saved mission with a reconnect banner. Polling backs off to 15 seconds after failures, waits while the page is hidden/offline and wakes on reconnection. The worker continues independently. A task retry invalidates that task's current terms and previous plan approval and requires a fresh research authorization; uncertain attempts cannot be retried. Constraint forms reject a stale base revision instead of overwriting a newer edit. For direct API clients, `POST /api/missions/:id/revise` requires `revision`, `constraints` and `reason`. Successful sign-in clears its local failed-attempt counter; repeated failures remain limited.
 
 ## Verify
 
