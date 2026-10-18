@@ -27,6 +27,8 @@ Integration tests use real PostgreSQL and the same coordinator. Provider HTTP te
 
 Docker build/run cannot be verified on this host: Docker is absent and WSL cannot start because virtualization is disabled. Compose, Docker targets, migration startup ordering and GitHub Actions checks are prepared. A production-like local optimized Next.js server and separate worker are used for final browser verification. Public hosting was not provisioned and no paid resource was created.
 
+Final code verification: [GitHub Actions run 39122791576](https://github.com/Arham-Begani/Chorus/actions/runs/39122791576) passed for code commit `78049f6`. A clean Linux installation passed type checking, 31 unit tests, 7 PostgreSQL integration tests, 4 browser tests, the production build, and **both web and worker Docker image builds**. GitGuardian also passed. Container runtime deployment and real Bolna calls are still unverified. Later documentation-only commits do not change the tested application.
+
 Final rehearsal additionally found and fixed a revision/hangup race: an active simulated attempt now refreshes and submits under a revision-specific idempotency key before ending. A regression test covers this timing.
 
 Accessibility contrast measured against the elevated surface: primary text 13.75:1, secondary 6.77:1, tertiary 4.89:1. Essential input/control borders were raised to 3.64:1. Next standalone packaging strips local .env files after build; Docker also excludes them from its build context.
