@@ -65,7 +65,12 @@ export async function coordinateTick(provider = new BolnaAdapter()) {
   }
   try {
     const rows = await pool.query(
-      "SELECT id FROM chorus_missions WHERE status IN ('running','blocked','ready','approved','paused') ORDER BY created_at",
+      `SELECT id FROM chorus_missions
+       WHERE status IN ('running','blocked')
+          OR EXISTS (SELECT 1 FROM jsonb_array_elements(state->'attempts') AS a(value)
+                     WHERE a.value->>'status' = ANY($1::text[]))
+       ORDER BY created_at`,
+      [activeStatuses],
     );
     for (const { id } of rows.rows) {
       await mutate(id, undefined, (m) => {
@@ -76,10 +81,13 @@ export async function coordinateTick(provider = new BolnaAdapter()) {
       });
     }
     // Query global admission after progress. Uncertain attempts occupy concurrency slots.
-    const all = await pool.query('SELECT state FROM chorus_missions');
-    let activeReal = all.rows
-      .flatMap((r) => (r.state as Mission).attempts)
-      .filter((a) => a.mode === 'real' && activeStatuses.includes(a.status)).length;
+    const active = await pool.query(
+      `SELECT count(*)::int AS count FROM chorus_missions,
+       LATERAL jsonb_array_elements(state->'attempts') AS a(value)
+       WHERE a.value->>'mode' = 'real' AND a.value->>'status' = ANY($1::text[])`,
+      [activeStatuses],
+    );
+    let activeReal: number = active.rows[0].count;
     const dispatches: { missionId: string; attempt: Attempt }[] = [];
     for (const { id } of rows.rows) {
       await mutate(id, undefined, (m) => {

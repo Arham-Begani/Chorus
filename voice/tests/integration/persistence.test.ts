@@ -21,6 +21,31 @@ async function advance(id: string, n = 24) {
   }
   return getMission(id, owner);
 }
+it('idle coordination and unchanged locked mutations preserve row and projection versions', async () => {
+  const m = createMission(owner, 'equipment', 'simulation', defaultConstraints());
+  m.status = 'paused';
+  await insert(m);
+  const versions = async () => ({
+    mission: (
+      await pool.query('SELECT xmin::text,updated_at FROM chorus_missions WHERE id=$1', [m.id])
+    ).rows,
+    entities: (
+      await pool.query(
+        'SELECT kind,id,xmin::text FROM chorus_entities WHERE mission_id=$1 ORDER BY kind,id',
+        [m.id],
+      )
+    ).rows,
+  });
+  const before = await versions();
+  await mutate(m.id, owner, (snapshot) => structuredClone(snapshot));
+  await coordinateTick();
+  expect(await versions()).toEqual(before);
+  await mutate(m.id, owner, (snapshot) => {
+    snapshot.title = 'An actual edit still persists';
+  });
+  expect((await getMission(m.id, owner)).title).toBe('An actual edit still persists');
+  expect(await versions()).not.toEqual(before);
+});
 it('runs relocation, propagates setup timing, revises budget and persists across a fresh DB connection', async () => {
   const m = createMission(owner, 'relocation', 'simulation', defaultConstraints());
   const approval = requestApproval(m, 'research');

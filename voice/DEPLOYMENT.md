@@ -1,6 +1,6 @@
 # Deploy web and worker
 
-No paid hosting account was provisioned. Docker files are prepared; this host has no Docker and WSL virtualization is disabled, so a Docker image run is not claimed as verified. GitHub CI builds images on Linux.
+No paid hosting account was provisioned. This Windows host has no Docker and WSL virtualization is disabled. GitHub CI builds both images on Linux and runs a disposable web/worker/migration/PostgreSQL stack using compose.ci.yaml, web health, persisted simulation across worker restart and an isolated archive restore. See the current run for its measured outcome. This CI override disables real calls and retains production Supabase auth mode; it is never part of the production HTTPS command. The independent desktop/mobile browser suite exercises the UI. A localhost-only local-auth login is intentionally unsuitable across a Docker bridge.
 
 Use a VM/container host that supports long-running Node processes, outbound HTTPS and PostgreSQL. A web-only serverless or Sites deployment is insufficient for the worker. A web deploy without a running worker will display missions but cannot coordinate research.
 
@@ -28,3 +28,11 @@ docker compose -f compose.yaml -f compose.https.yaml up --build -d
 The Caddyfile enforces a 64KB request body cap and proxies web:3000; named volumes preserve TLS state. [Caddy automatically obtains and renews public certificates](https://caddyserver.com/docs/automatic-https) when DNS and ports are configured correctly. This overlay has no domain or paid service attached. Validate it on the eventual host, then test sign-in, simulation, refresh, worker replacement and database restore before accepting live traffic. Back up the persistent database and test a restore to a separate database; a volume is not a backup. Never use `docker compose down -v` on persisted mission data.
 
 For a local integration rehearsal instead, use [LOCAL_LIVE_TEST.md](integrations/LOCAL_LIVE_TEST.md). Its temporary tunnel exposes only callbacks and is not a stable production URL.
+
+## Backup and restore rehearsal
+
+On the Linux Compose host, pause admission and stop web/worker for a quiet comparison, leaving PostgreSQL running. From `voice/`, run `bash scripts/verify-backup.sh "$(docker compose ps -q postgres)"`. The script makes a full custom-format archive, restores into a uniquely named temporary database in that container and compares mission, event, entity and migration contents plus RLS. It removes only its own temporary database/archive. It never restores over the source database. CI runs the same script against PostgreSQL 17 after the browser-test processes exit. This verifies archive recovery; permanent-host recovery still needs its own rehearsal.
+
+For retained backups, use PostgreSQL 17's `pg_dump --format custom` with your private connection settings, then encrypt the archive and store it off-host with a retention schedule. `pg_dump` contains one database, including the pg-boss schema, but not cluster roles or Supabase Auth users. Archive those independent services/settings through their own supported procedures. Restore with `pg_restore --exit-on-error` into a new empty database and review the restored data before changing DATABASE_URL. Never start a live worker against an old backup until you have reconciled all real provider executions: restoring local data cannot undo a call that already happened. [PostgreSQL archive documentation](https://www.postgresql.org/docs/17/app-pgdump.html), [restore documentation](https://www.postgresql.org/docs/17/app-pgrestore.html).
+
+The native Windows development dependency ships the server but not pg_dump/pg_restore. Use the Linux/container rehearsal or separately installed official PostgreSQL 17 client tools; the local runtime helper is not a backup system. No retained off-host backup or permanent-host restore is claimed here.

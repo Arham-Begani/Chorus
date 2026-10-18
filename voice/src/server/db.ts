@@ -1,4 +1,5 @@
 import { Pool, type PoolClient } from 'pg';
+import { isDeepStrictEqual } from 'node:util';
 import { config } from './config';
 import type { Mission } from '../core/types';
 const globalDb = globalThis as unknown as { chorusPool?: Pool };
@@ -77,8 +78,11 @@ export async function mutate<T>(
     const r = await c.query('SELECT state FROM chorus_missions WHERE id=$1 FOR UPDATE', [id]);
     const m = r.rows[0]?.state as Mission | undefined;
     if (!m || (ownerId && m.ownerId !== ownerId)) throw new Error('Mission not found');
+    const before = structuredClone(m);
     const result = await fn(m);
-    await save(c, m);
+    // Reads, duplicate commands and idle worker ticks keep their row lock but do not
+    // rewrite the aggregate, projections and timestamps when nothing changed.
+    if (!isDeepStrictEqual(before, m)) await save(c, m);
     await c.query('COMMIT');
     return result;
   } catch (e) {

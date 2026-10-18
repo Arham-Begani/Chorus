@@ -1,5 +1,9 @@
 # Verification record
 
+Latest local pass, **19 October 2026**: typecheck, 52 unit tests, 10 real PostgreSQL integration tests, optimized production build and 22 desktop/mobile browser tests passed (84 total). Windows startup restored missing web/worker processes and a repeated invocation reused the same process identities. Live provider executions remain unverified and disabled. The subsequent sections preserve earlier measurements and the submission/recovery changes. Linux archive/restore, image and HTTPS results are recorded by the current GitHub CI run.
+
+[Linux CI passed for source commit 7433531](https://github.com/Arham-Begani/Chorus/actions/runs/39162576978), including the full database archive/isolated restore with matching contents and RLS, 84 tests, production/Docker builds and Caddy/Compose HTTPS validation. Windows startup also restored a deliberately stopped worker. The local workspace was opened in the in-app browser with existing email/password sign-in; no auth settings changed. The six-slide Google pitch was exported to PDF and all slides visually reviewed after repairing missing screenshot media. Public pitch-link permission and final form submission remain owner actions, not completed claims.
+
 Date: 2026-10-18. Native Windows, Node 24.19.0, PostgreSQL 17.6. Dependencies are exact versions in package-lock.json; Next.js 16.4.2, React 19.3.1, pg-boss 12.38.0, Bolna Web Call SDK 3.0.1. The native PostgreSQL 18 package crashed during initialization; the dev helper was pinned to 17.6, which initialized and ran successfully. No system virtualization settings were changed.
 
 ## Landing, workspace and recovery pass — latest verification
@@ -65,3 +69,15 @@ Latest local code verification: typecheck passed; all 38 unit tests passed; opti
 Cloudflared 2026.10.1 was downloaded from the official release and its SHA256 matched the release digest. The gateway and temporary tunnel were started. External POST probes measured 404 for the dashboard/login/mission paths, 401 for an unauthenticated webhook, and 202 for an authenticated unknown execution (expected reconciliation behavior). Local web/database health returned HTTP 200; the dedicated worker logged ready. These probes do not start calls and are not provider-originated webhook delivery proof.
 
 Real calls remain disabled pending participant authorization, separate call-cost authorization, verified provider pricing/telephony requirements, and the browser/one-phone proof. The single-VM HTTPS overlay and Caddy configuration are prepared; Linux validation is added to CI. No VM, domain or paid telephony resource was purchased. A temporary callback tunnel is not a production deployment.
+
+# Submission and recovery pass — 2026-10-19
+
+PR #2 merged as ce3039a65cc11563abd3b01f16cab405850d3d6c. This computer's PostgreSQL process had stopped while the web process remained alive. Restarted the existing cluster, waited for crash recovery and reran migrations; web health returned HTTP 200. Existing mission data remained in place. Added scripts/start-local.ps1 to restore missing simulation services with database/web/worker readiness checks, private logs and preserved email auth. It refuses an unrecognized process on port 3000.
+
+Read-only diagnostics: Supabase Auth settings HTTP 200, Bolna account HTTP 200, both configured agents HTTP 200, capacity two total sessions. CALL_ALLOWLIST was empty and real switches disabled. The owner then selected dummy participants only. No browser/provider session or telephone call was started.
+
+An initial rerun of the integration suite exposed unnecessary writes across accumulated finished missions and timed out. Fixed locked mutations to skip saving unchanged aggregates, kept idle ready/approved/paused missions out of progress selection unless they have active attempts, and counted global active real attempts inside PostgreSQL. After that fix, all 10 PostgreSQL integration tests passed on the existing accumulated database, including a new xmin/projection-version regression proving no-op stability and actual-edit persistence. The unit suite passed all 52 tests before this fix; final build/browser/CI results are recorded below when complete.
+
+Added a full pg_dump/pg_restore rehearsal against a separate, uniquely named database in CI. Source web/worker processes exit before fingerprint comparison. The script compares mission/entity/event/migration data and RLS, removes only its own scratch data and does not restore over the source. This is a CI recovery check, not a retained off-host backup or permanent-host proof. The Windows embedded server does not bundle pg_dump/pg_restore.
+
+The actual buildathon form accepts a repository link and requires a pitch deck/video link. SUBMISSION.md includes the 31 October submission date, the observed fields and a 179-character description. No form has been submitted. Real provider proof and selected-host deployment remain unverified.

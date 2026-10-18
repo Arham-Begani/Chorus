@@ -1,0 +1,30 @@
+# Exact handoff for real-call testing
+
+Current direction: **dummy participants only**. Keep `SIMULATION_ONLY=true` and `ENABLE_REAL_CALLS=false`. Simulation uses role contacts, not dialable dummy numbers. No call has been placed. The existing email operator and Supabase project are sufficient; no phone authentication is needed.
+
+## What the owner supplies when ready
+
+1. **One consenting test participant for the first phone call.** Save their E.164 destination privately in ignored `voice/.env` as `CALL_ALLOWLIST`; do not post it in public issues, screenshots or submission materials. Confirm they consent to an AI test conversation and any recording/transcript configured in Bolna. In the private mission contact form, assign only that participant to the one task under test and mark that contact authorized.
+2. **An exact date, time window and timezone.** For example, give a date plus start/end times in Asia/Kolkata. This grants one rehearsal window, not ongoing calling permission. The server's HH:mm window repeats daily, so restore the disabled switches after the rehearsal.
+3. **A numeric maximum total provider spend.** State the allowance in INR and whether it covers both browser voice and telephone minutes. The event's venue/catering budget is separate. Review current Bolna model/voice/carrier prices and account balance before deriving a conservative per-attempt reserve. A browser session can also cost money. Do not interpret a balance, a saved API key or a general “yes” as a numerical spend cap.
+4. **Availability at the computer.** Use the browser microphone/headphones for the conductor proof and have the participant ready to answer. The first outbound rehearsal uses one attempt of at most 180 seconds, provider duration cap and automatic retries disabled. Hardware voice quality must be observed directly.
+
+Already configured: Supabase email operator, Bolna API key, two role agents and independent callback/tool secrets. A temporary callback tunnel must be recreated and its private agent URLs refreshed before a live test. No new keys or passwords need to be sent in chat.
+
+Bolna's [current concurrency guide](https://www.bolna.ai/docs/pricing/outbound-calling-concurrency) says trial accounts can call only verified destinations. If this account is a trial, the participant must complete that provider verification before dialing. This is a telephony requirement; CHORUS still uses email/password login. [Current pricing overview](https://www.bolna.ai/docs/get-started/what-it-costs) explains that selected models/voices and the carrier affect the charge. A general published per-minute figure is not a verified quote for the configured agent.
+
+## What the agent can finish after that handoff
+
+- Recheck account capacity, destination/caller identity availability, selected model/voice pricing and duration/retry settings without dialing. If telephony provisioning or an upgrade costs money, show the concrete quote before that action.
+- Start the callback-only HTTPS gateway/tunnel, regenerate private role tools, update the two existing agents and repeat gateway authentication/path probes.
+- Bound the first test to one destination/attempt and the authorized window/spend. Set verified limits and restart web/worker only after checks pass. Create the fresh real mission and require current research plus separate call-cost approval.
+- Observe an actual Bolna browser tool invocation and persisted constraint revision, then a single outbound structured fact with execution id, correctly scoped tool results and completed callback/polling evidence. An adapter mock does not meet this test.
+- Record actual execution ids/charges privately and keep only redacted outcomes in public verification. Pause the mission, stop provider sessions and restore disabled switches afterwards. Pause does not guarantee termination of an active provider call.
+
+## Additional inputs for the original simultaneous-call demonstration
+
+Three separate authorized destination participants play venue, catering and transport. Account capacity must support **at least four total sessions** when the browser conductor stays active alongside three outbound calls. The last account readback reported two. Obtain buildathon credits or a suitable capacity allowance from Bolna, or approve a reviewed upgrade quote. More outbound concurrency cannot be created by increasing a local environment variable.
+
+With those prerequisites, test the shared 17:30 venue access / 45-minute setup conflict and a spoken INR 9,000 revision while calls run. Verify agents refresh their current brief and report reconfirmed terms. Preserve a blocked result when the revised constraints cannot be met. Do not describe sequential calls or simulated agents as the required simultaneous-call proof.
+
+Procedure: [LOCAL_LIVE_TEST.md](LOCAL_LIVE_TEST.md), [BOLNA_SETUP.md](BOLNA_SETUP.md). Owner authorization is required by [AGENTS.md](../AGENTS.md): “Real calls need configured credentials, a participant allowlist, a calling window, and a separate call-cost authorization.”
