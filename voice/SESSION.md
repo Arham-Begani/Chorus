@@ -1,4 +1,14 @@
-# Session handoff — 2026-10-18
+# Session handoff — 2026-10-19
+
+## Submission pass
+
+User requested merging PR #2, restoring the app and completing achievable submission work. PR #2 is merged as ce3039a. Current work branches from that main in feat/submission-readiness. User then supplied the Bolna Symphony Buildathon link and selected **dummy participants only**. Do not dial or populate fake phone numbers. No further email-auth setup is needed. Exact later live-test inputs are documented in integrations/REAL_CALL_CHECKLIST.md.
+
+Restored the existing PostgreSQL cluster after its process stopped, preserving data. Added scripts/start-local.ps1 plus local-runtime-check.mjs for an idempotent Windows simulation start: it selects Node 24.12+, waits for database recovery, migrates and starts missing web/worker processes. It preserves .env/auth, rejects nonlocal/live configuration and refuses an unknown listener on port 3000. Repeated actual startup reused the same process identities. Logs/PIDs are private in .data. Start with `powershell -NoProfile -File scripts/start-local.ps1` from voice/. It is a manual restart command, not an installed boot service.
+
+Fixed accumulated-data churn discovered by the fresh integration run: unchanged locked mutations no longer rewrite aggregate/projection rows or timestamps, and idle completed/paused missions are excluded unless attempts remain active. Global active real attempts are counted in SQL. The real PostgreSQL regression checks xmin/projection versions and actual-edit persistence. Final local verification passed typecheck, all 52 unit tests, all 10 integration tests, optimized build and all 22 desktop/mobile browser tests (84 total). No additional test rerun is needed unless code changes or CI identifies a failure. CI now stops its test processes before a separate full archive/restore comparison, then builds both images and validates HTTPS. Read current PR checks for that Linux result.
+
+SUBMISSION.md records the actual form: deadline 31 October 2026 (cutoff time not stated), repository/live/demo link and a required Drive/Luma pitch link. The source repository is acceptable without permanent hosting. Prepare/check the six-slide pitch in delivery outputs and native Drive; the owner supplies registration/team details and performs final submission. Keep live Bolna execution and permanent-host claims unverified. The original Midnight project remains separate.
 
 ## Current direction
 
@@ -10,7 +20,7 @@ Latest UI/reliability pass: public landing at / with an interactive illustrative
 
 Verification for this pass: 52 unit tests, 9 PostgreSQL integration tests, the optimized build and all 22 desktop/mobile browser tests passed. Desktop Chromium is 1600×1100, mobile Chromium uses iPhone 13 emulation at 375×812. After final alert-clear and paise-display polish, all 52 unit tests, the production build and four focused desktop/mobile landing/stale-revision checks passed again. Changes continue in PR #2; its description records the current Linux CI result. The local production web and separate simulation worker are restored for the user. Keep the operator app configured for email auth; do not request additional auth setup. Live calls and permanent hosting remain unverified.
 
-The unrelated Midnight product is preserved. CHORUS lives in voice/. PR #1 was merged into main as 4546542. Current work continues on feat/live-setup in PR #2: https://github.com/Arham-Begani/Chorus/pull/2.
+The unrelated Midnight product is preserved. CHORUS lives in voice/. PR #1 merged into main as 4546542. The account-setup and redesign work from feat/live-setup merged in PR #2: https://github.com/Arham-Begani/Chorus/pull/2.
 
 The app has an authenticated Next.js dashboard, durable PostgreSQL aggregate/projections/events, pg-boss worker, shared coordination engine, configurable event relocation and equipment/delivery simulations, source evidence, approvals, revisions, pause/recovery and Bolna adapter/tool/callback contracts. Binding purchases, reservations and cancellations are outside this version.
 

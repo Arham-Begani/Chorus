@@ -49,10 +49,19 @@ jobs:
       - run: npm run typecheck && npm test && npm run test:integration && npm run build
       - run: npx playwright install --with-deps chromium
       - run: |
-          npm start > /tmp/chorus-web.log 2>&1 &
-          npm run worker > /tmp/chorus-worker.log 2>&1 &
+          node scripts/start.mjs > /tmp/chorus-web.log 2>&1 &
+          web_pid=$!
+          node --import tsx worker/index.ts > /tmp/chorus-worker.log 2>&1 &
+          worker_pid=$!
+          cleanup() {
+            kill "$web_pid" "$worker_pid" 2>/dev/null || true
+            wait "$web_pid" "$worker_pid" 2>/dev/null || true
+          }
+          trap cleanup EXIT
           for i in $(seq 1 30); do curl -sf http://localhost:3000/api/health && break || sleep 2; done
           npm run test:e2e
+      - name: Verify PostgreSQL backup and isolated restore
+        run: bash scripts/verify-backup.sh '${{ job.services.postgres.id }}'
       - uses: actions/upload-artifact@v4
         if: always()
         with:

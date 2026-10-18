@@ -1,6 +1,10 @@
 # Chorus
 
-The separate CHORUS voice mission-control application lives in [voice/](voice/README.md), with its own setup, worker, database, tests and deployment instructions. The Midnight project documented below is preserved.
+**CHORUS voice mission control:** [open the application project](voice/README.md) or [submission guide](voice/SUBMISSION.md). Speak or type an event goal, coordinate simulated vendor research, revise constraints and review a sourced plan. The responsive application, separate worker, PostgreSQL persistence and deployment files live in `voice/`. Actual Bolna calling remains unverified and disabled by default.
+
+## Earlier Midnight project
+
+The separate Midnight project documented below is preserved. Its wallet, token and contract instructions are unrelated to the voice application.
 
 A scam report that nobody can read until someone else independently makes the same one.
 
