@@ -6,6 +6,8 @@ Verification: `npm run typecheck`, `npm test`, `npm run test:integration`, `npm 
 
 Keep TASKS.md and VERIFICATION.md honest. A provider adapter passing mocked HTTP tests is not a live call. Record live blockers separately. At session boundaries update SESSION.md with passed commands, blockers and next task. Purchases and binding reservations are outside this version; approval produces a plan only. Real calls need configured credentials, a participant allowlist, a calling window, and a separate call-cost authorization.
 
+Browser conductor commands and simulation require no phone number. Email/password authentication is sufficient for the operator. Keep optional real-call setup separate from product work; missing telephony setup must never disable simulation or typed conductor commands. Browser recognition is capability-detected and has a typed fallback. A recognition test double proves the command pipeline, not hardware audio or a Bolna conversation.
+
 <!-- BEGIN:nextjs-agent-rules -->
 
 ## This is NOT the Next.js you know

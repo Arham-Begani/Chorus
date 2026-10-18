@@ -17,6 +17,7 @@
     "test": "vitest run tests/unit",
     "test:integration": "tsx --env-file=.env node_modules/vitest/vitest.mjs run tests/integration",
     "test:e2e": "playwright test",
+    "test:e2e:local": "node scripts/e2e-local.mjs",
     "setup": "tsx scripts/setup.ts",
     "bolna:tools": "tsx scripts/generate-tools.ts",
     "bolna:tools:private": "tsx --env-file=.env scripts/generate-tools.ts --private",

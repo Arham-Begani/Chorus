@@ -18,6 +18,8 @@ import { constraintsSchema, kindSchema, termsSchema, type Mission } from '../../
 import { BolnaAdapter } from '../../../providers/bolna';
 import { applyExecution } from '../../../server/coordinator';
 import { executeTool } from '../../../server/tools';
+import { conduct } from '../../../server/conductor';
+import { goalConstraints } from '../../../core/conductor';
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 const json = (v: unknown, status = 200) =>
@@ -123,6 +125,8 @@ async function handle(req: Request, { params }: { params: Promise<{ path: string
       return json({ accepted: true });
     }
     const owner = await user(req);
+    if (p === 'conductor' && req.method === 'POST')
+      return json(await conduct(owner, await body(req)));
     if (p === 'session') return json({ authenticated: true, readiness: readiness() });
     if (p === 'logout') {
       const response = json({ ok: true });
@@ -148,7 +152,10 @@ async function handle(req: Request, { params }: { params: Promise<{ path: string
         owner,
         data.scenario,
         data.mode,
-        data.constraints || defaultConstraints(),
+        data.constraints ||
+          (data.goal
+            ? goalConstraints(data.goal, defaultConstraints()).constraints
+            : defaultConstraints()),
         data.goal,
       );
       event(

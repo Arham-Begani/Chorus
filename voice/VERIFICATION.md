@@ -2,6 +2,19 @@
 
 Date: 2026-10-18. Native Windows, Node 24.19.0, PostgreSQL 17.6. Dependencies are exact versions in package-lock.json; Next.js 16.4.2, React 19.3.1, pg-boss 12.38.0, Bolna Web Call SDK 3.0.1. The native PostgreSQL 18 package crashed during initialization; the dev helper was pinned to 17.6, which initialized and ran successfully. No system virtualization settings were changed.
 
+## Browser conductor completion — latest local verification
+
+- Typecheck passed. All **43 unit tests** and **9 PostgreSQL integration tests** passed, including real worker process replacement.
+- **8 desktop/mobile browser tests passed** against the optimized production build. These cover mission lifecycle, both mission templates, natural typed creation/revision, pause/resume, restored conductor history, explicit research/plan approvals, evidence, refresh, graph visibility, viewport overflow and unauthenticated rejection.
+- Speech-recognition protocol tests send a recognized result through the actual conductor API and database, preserve its voice source, then deny microphone access and verify typed control still works. Recognition is an explicit test double: no hardware recording, speech quality, paid Bolna browser conversation or real telephone execution is claimed.
+- New database coverage proves concurrent creation-key deduplication, preservation of existing progress, owner isolation, command deduplication, stale revision rejection, persisted command provenance, pause enforcement and the inability of a voice/text command to approve or book a plan. A replacement research approval revokes earlier permission.
+- Optimized build passed, including TypeScript checking and standalone secret stripping. Browser visual inspection covered the conductor dialog and responsive mission views. After adjusting the conversation to keep the newest reply in view, the final production build passed all four focused conductor tests again on desktop/mobile. Both responsive dialog screenshots were inspected.
+- The production app was reopened with the existing Supabase email session. A natural-language event goal created a persisted simulation with 40 guests, tomorrow at 18:00 Asia/Kolkata and INR 12,000; simulated research was authorized through its actual approval card. No phone number was requested or used.
+
+`npm run test:e2e:local` manages a temporary loopback-only server on port 3002 with random test credentials, real calls disabled and a separate worker; it cleans up both processes. It never edits operator configuration. The production app remains configured for Supabase email/password auth.
+
+These results complete the supported browser/simulation workflow. Actual Bolna execution and deployment on a permanent host remain unverified. The historical records below distinguish the original delivery from later account setup and product completion.
+
 ## Original simulation delivery checks
 
 | Check                          | Measured result                                                                                                                                                                                                                        |

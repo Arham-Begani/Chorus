@@ -15,7 +15,7 @@ test('mission lifecycle, revisions, evidence, refresh and approvals', async ({ p
     page.getByRole('heading', { name: 'Bring the evening back together' }),
   ).toBeVisible();
   await expect(page.getByText('No phone calls are placed')).toBeAttached();
-  await expect(page.getByRole('button', { name: 'Talk to conductor' })).toBeDisabled();
+  await expect(page.getByRole('button', { name: 'Talk to conductor', exact: true })).toBeEnabled();
   await page.getByRole('button', { name: 'Authorize simulated research' }).click();
   await expect(page.getByRole('button', { name: 'Approve proposed plan' })).toBeVisible({
     timeout: 60000,

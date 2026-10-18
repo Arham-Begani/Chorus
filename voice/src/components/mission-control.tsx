@@ -30,6 +30,7 @@ import {
 } from 'lucide-react';
 import type { BolnaWebCall } from '@bolna/web-call';
 import type { Mission, Offer, TaskKind, Terms } from '../core/types';
+import ConductorPanel from './conductor-panel';
 type Ready = {
   realEnabled: boolean;
   missing: string[];
@@ -173,7 +174,9 @@ export default function MissionControl() {
     [error, setError] = useState(''),
     [notice, setNotice] = useState(''),
     [drawer, setDrawer] = useState(false),
-    [modal, setModal] = useState<'new' | 'constraints' | 'responses' | 'contacts' | null>(null),
+    [modal, setModal] = useState<
+      'new' | 'constraints' | 'responses' | 'contacts' | 'conductor' | null
+    >(null),
     [scenario, setScenario] = useState<'relocation' | 'equipment'>('relocation'),
     [mode, setMode] = useState<'simulation' | 'real'>('simulation'),
     [goal, setGoal] = useState(''),
@@ -185,15 +188,19 @@ export default function MissionControl() {
   const call = useRef<BolnaWebCall | null>(null),
     selected = useRef<string | null>(null);
   const load = useCallback(async () => {
+    const selectionAtStart = selected.current;
     const items = await api<Mission[]>('missions');
+    if (selectionAtStart !== selected.current) return;
     setMissions(items);
-    const id =
+    const requested =
       selected.current || new URLSearchParams(location.search).get('mission') || items[0]?.id;
+    const id = items.some((item) => item.id === requested) ? requested : items[0]?.id;
+    selected.current = id || null;
+    if (requested && requested !== id) history.replaceState(null, '', id ? `?mission=${id}` : '/');
     if (id) {
       const next = await api<Mission>(`missions/${id}`);
-      selected.current = id;
-      setM(next);
-    }
+      if (selected.current === id) setM(next);
+    } else setM(null);
   }, []);
   useEffect(() => {
     api<{ readiness: Ready }>('session')
@@ -293,6 +300,8 @@ export default function MissionControl() {
       await load();
     });
   function choose(id: string) {
+    void call.current?.stop();
+    setVoiceState('idle');
     selected.current = id;
     history.replaceState(null, '', `?mission=${id}`);
     void run(load);
@@ -399,7 +408,7 @@ export default function MissionControl() {
           </h1>
           <p>Coordinate the details. Keep the decisions yours.</p>
           <label>
-            Email <span className="muted">(Supabase deployments)</span>
+            Email
             <input
               type="email"
               value={email}
@@ -425,10 +434,7 @@ export default function MissionControl() {
           <button className="primary" disabled={busy}>
             Open mission control <ArrowUpRight size={16} />
           </button>
-          <p className="caption">
-            Local setup: use DEMO_PASSWORD from your .env file. Local sessions can only run
-            simulations.
-          </p>
+          <p className="caption">Sign in with your CHORUS account.</p>
         </form>
         <span className="login-footer">Evidence before action. Always.</span>
       </main>
@@ -545,7 +551,10 @@ export default function MissionControl() {
                 Set a goal. Review the contacts. Let coordinated conversations find a plan you can
                 trust.
               </p>
-              <button className="primary" onClick={() => setModal('new')}>
+              <button className="primary" onClick={() => setModal('conductor')}>
+                <Mic size={16} /> Talk to conductor
+              </button>{' '}
+              <button className="secondary" onClick={() => setModal('new')}>
                 <Plus size={16} /> Create your first mission
               </button>
               <div className="empty-scenarios">
@@ -625,7 +634,7 @@ export default function MissionControl() {
                   </strong>
                   <span>
                     {m.mode === 'simulation'
-                      ? 'Simulation runs configurable business responses through the coordination engine.'
+                      ? 'Speak or type goals and revisions. Coordinated simulations need no phone number.'
                       : ready?.realEnabled
                         ? 'Talk to revise constraints. Phone agents receive changes on their next brief refresh.'
                         : 'Complete live configuration to connect the conductor.'}
@@ -633,14 +642,19 @@ export default function MissionControl() {
                 </div>
                 <button
                   className="voice-button"
-                  disabled={busy || m.mode === 'simulation' || !ready?.realEnabled}
-                  onClick={voice}
+                  disabled={busy}
+                  onClick={() => setModal('conductor')}
                 >
                   <Mic size={16} />
-                  {['active', 'ringing', 'connecting'].includes(voiceState)
-                    ? 'End conversation'
-                    : 'Talk to conductor'}
+                  Talk to conductor
                 </button>
+                {m.mode === 'real' && ready?.realEnabled && (
+                  <button className="secondary" disabled={busy} onClick={voice}>
+                    {['active', 'ringing', 'connecting'].includes(voiceState)
+                      ? 'End Bolna conversation'
+                      : 'Connect Bolna voice'}
+                  </button>
+                )}
                 <button className="text-button" onClick={() => setModal('constraints')}>
                   Revise goal <ArrowUpRight size={14} />
                 </button>
@@ -1181,26 +1195,30 @@ export default function MissionControl() {
             role="dialog"
             aria-modal="true"
             aria-label={
-              modal === 'new'
-                ? 'New mission'
-                : modal === 'constraints'
-                  ? 'Revise mission'
-                  : modal === 'contacts'
-                    ? 'Mission contacts'
-                    : 'Business responses'
+              modal === 'conductor'
+                ? 'Browser conductor'
+                : modal === 'new'
+                  ? 'New mission'
+                  : modal === 'constraints'
+                    ? 'Revise mission'
+                    : modal === 'contacts'
+                      ? 'Mission contacts'
+                      : 'Business responses'
             }
             className="modal"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="modal-header">
               <h2>
-                {modal === 'new'
-                  ? 'Start with a goal'
-                  : modal === 'constraints'
-                    ? 'Revise the mission'
-                    : modal === 'contacts'
-                      ? 'Review your contacts'
-                      : 'Configure business responses'}
+                {modal === 'conductor'
+                  ? 'Your conductor'
+                  : modal === 'new'
+                    ? 'Start with a goal'
+                    : modal === 'constraints'
+                      ? 'Revise the mission'
+                      : modal === 'contacts'
+                        ? 'Review your contacts'
+                        : 'Configure business responses'}
               </h2>
               <button
                 className="icon-button"
@@ -1210,6 +1228,18 @@ export default function MissionControl() {
                 <X size={18} />
               </button>
             </div>
+            {modal === 'conductor' && (
+              <ConductorPanel
+                mission={m}
+                providerActive={['active', 'ringing', 'connecting'].includes(voiceState)}
+                onMission={async (next) => {
+                  selected.current = next.id;
+                  history.replaceState(null, '', `?mission=${next.id}`);
+                  setM(next);
+                  await load();
+                }}
+              />
+            )}
             {modal === 'new' && (
               <form onSubmit={create}>
                 <label>
@@ -1244,8 +1274,9 @@ export default function MissionControl() {
                   </select>
                 </label>
                 <p className="caption">
-                  Starts with 40 guests, an 18:00 deadline tomorrow, and a {money(1200000)}{' '}
-                  additional budget. Review and edit before authorizing.
+                  Include a budget, guest count and time in your goal to set them directly.
+                  Otherwise the draft uses 40 guests, 18:00 tomorrow and {money(1200000)}. Review
+                  before authorizing.
                 </p>
                 <button className="primary wide" disabled={busy}>
                   Propose mission <ArrowUpRight size={16} />

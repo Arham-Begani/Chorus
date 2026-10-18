@@ -35,6 +35,14 @@ export function researchApproved(m: Mission) {
   );
 }
 export function requestApproval(m: Mission, kind: Approval['kind'], force = false) {
+  if (force)
+    for (const a of m.approvals)
+      if (
+        a.kind === kind &&
+        a.revision === m.revision &&
+        ['requested', 'approved'].includes(a.status)
+      )
+        a.status = 'stale';
   const key = kind === 'plan' ? evidenceKey(m) : '';
   const existing =
     !force &&

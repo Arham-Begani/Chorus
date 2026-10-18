@@ -43,6 +43,19 @@ export async function insert(m: Mission) {
   const c = await pool.connect();
   try {
     await c.query('BEGIN');
+    const created = await c.query(
+      'INSERT INTO chorus_missions(id,owner_id,mode,status,revision,state) VALUES($1,$2,$3,$4,$5,$6) ON CONFLICT(id) DO NOTHING RETURNING id',
+      [m.id, m.ownerId, m.mode, m.status, m.revision, JSON.stringify(m)],
+    );
+    if (!created.rowCount) {
+      const previous = await c.query(
+        'SELECT state FROM chorus_missions WHERE id=$1 AND owner_id=$2',
+        [m.id, m.ownerId],
+      );
+      if (!previous.rowCount) throw new Error('Mission not found');
+      await c.query('COMMIT');
+      return previous.rows[0].state as Mission;
+    }
     await save(c, m);
     await c.query('COMMIT');
   } catch (e) {

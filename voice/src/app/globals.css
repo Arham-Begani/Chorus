@@ -1273,6 +1273,69 @@ kbd {
   grid-template-columns: 1fr 1fr;
   gap: var(--space-4);
 }
+.browser-conductor .conductor-intro {
+  margin-bottom: var(--space-4);
+}
+.conductor-mic-row,
+.conductor-send-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+}
+.conductor-mic-row {
+  padding-bottom: var(--space-4);
+  border-bottom: 1px solid var(--border);
+}
+.conductor-mic-row > span {
+  font-size: var(--small);
+  color: var(--muted);
+}
+.conductor-mic-row .listening {
+  background: var(--accent);
+  color: var(--bg);
+}
+.conductor-interim {
+  margin-top: var(--space-3);
+}
+.conductor-history {
+  max-height: 32dvh;
+  overflow: auto;
+  margin: var(--space-6) 0;
+  display: grid;
+  gap: var(--space-4);
+}
+.conductor-message {
+  padding: var(--space-3) var(--space-4);
+  border-left: 2px solid var(--border);
+}
+.conductor-message.reply {
+  background: var(--surface-2);
+  border-color: var(--accent);
+}
+.conductor-message > strong {
+  font-size: var(--label);
+  color: var(--muted);
+}
+.conductor-message > p {
+  margin: var(--space-2) 0 0;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.browser-conductor .conductor-privacy {
+  margin: var(--space-6) 0 0;
+}
+@media (max-width: 720px) {
+  .conductor-mic-row,
+  .conductor-send-row {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+  .conductor-send-row .primary {
+    width: 100%;
+    justify-content: center;
+  }
+}
 .code-input {
   font-family: var(--font-mono);
   font-size: var(--label);
