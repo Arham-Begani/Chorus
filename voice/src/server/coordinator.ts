@@ -36,7 +36,9 @@ export function applyExecution(m: Mission, attemptId: string, input: unknown) {
     const t = m.tasks.find((t) => t.id === a.taskId)!;
     t.state = m.offers.some((o) => o.attemptId === a.id && !o.stale && !o.declined)
       ? 'complete'
-      : 'blocked';
+      : a.revision < m.revision && t.rounds < 3
+        ? 'pending'
+        : 'blocked';
     if (t.state === 'blocked')
       t.question =
         'Call ended without current structured terms. Review evidence and explicitly retry if appropriate.';

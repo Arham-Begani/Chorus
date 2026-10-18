@@ -23,7 +23,7 @@ export class SimulationAdapter {
       report(
         m,
         scope,
-        'brief-read',
+        `brief-read-r${m.revision}`,
         `Simulation agent refreshed revision ${m.revision}. ${b.sharedEvidence.some((x) => x.terms) ? 'Evidence from other conversations is now in this brief.' : 'Collecting initial terms.'}`,
       );
       a.phase = 2;
@@ -53,7 +53,7 @@ export class SimulationAdapter {
             (!!o.readyAt && Date.parse(o.readyAt) <= Date.parse(b.latestAccessAt))),
       );
       const choice = fits[0] || options[Math.min(t.rounds - 1, options.length - 1)];
-      submit(m, scope, 'terms', m.revision, choice);
+      submit(m, scope, `terms-r${m.revision}`, m.revision, choice);
       if (
         previous &&
         choice.priceMinor === previous.priceMinor &&
@@ -61,6 +61,16 @@ export class SimulationAdapter {
       )
         report(m, scope, 'no-change', 'Business cannot improve its current terms.');
       a.phase = 3;
+    } else if (a.revision !== m.revision) {
+      // A revision may arrive between collecting terms and ending the conversation.
+      // Keep this attempt alive and refresh instead of finalizing stale terms.
+      a.phase = 1;
+      event(
+        m,
+        'simulation.refresh-needed',
+        'Mission changed before the conversation ended; refreshing terms.',
+        a.id,
+      );
     } else {
       a.status = 'completed';
       t.state = latest(m, t.id) ? 'complete' : 'blocked';

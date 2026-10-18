@@ -4,7 +4,7 @@ Repository Arham-Begani/Chorus had an unrelated Midnight project. It was cloned 
 
 Implemented: Next.js mission control, PostgreSQL aggregate/projections/events and migrations, pg-boss process, shared coordination engine, configurable simulation, Bolna adapter/session/tool/callback contracts, scoped capabilities, approvals, revisions, pause/recovery, second equipment mission, prompts/tool schemas, local DB helper, Docker/Compose, CI, setup/deployment/demo docs. Private participant role cards are an ignored local-only deliverable.
 
-Passed: 30 unit tests, 7 PostgreSQL integration tests including real worker process replacement, typecheck, optimized build, earlier desktop/mobile browser lifecycle runs. Final production browser run and GitHub CI status are updated before handoff in VERIFICATION.md.
+Passed: 31 unit tests, 7 PostgreSQL integration tests including real worker process replacement, typecheck, optimized build, earlier desktop/mobile browser lifecycle runs. Final production browser run and GitHub CI status are updated before handoff in VERIFICATION.md.
 
 Remaining integration limits: no account-backed Bolna proof; no browser voice audio in simulation; no actual three-call voice run or spoken live revisions; no public deployment. Exact live requirements are in integrations/BOLNA_SETUP.md. Docker cannot run locally; CI prepares Linux image validation.
 

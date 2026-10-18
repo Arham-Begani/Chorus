@@ -8,7 +8,7 @@ Date: 2026-10-18. Native Windows, Node 24.19.0, PostgreSQL 17.6. Dependencies ar
 | ------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | npm install / dependency audit | 0 known vulnerabilities reported                                                                                                                                                                                                       |
 | npm run typecheck              | Passed                                                                                                                                                                                                                                 |
-| npm test                       | 30 tests passed                                                                                                                                                                                                                        |
+| npm test                       | 31 tests passed                                                                                                                                                                                                                        |
 | npm run db:migrate             | Migrations 001 and 002 applied to real PostgreSQL                                                                                                                                                                                      |
 | npm run test:integration       | 7 tests passed against PostgreSQL                                                                                                                                                                                                      |
 | npm run build                  | Optimized Next.js production build passed                                                                                                                                                                                              |
@@ -26,3 +26,5 @@ Integration tests use real PostgreSQL and the same coordinator. Provider HTTP te
 ## Deployment verification
 
 Docker build/run cannot be verified on this host: Docker is absent and WSL cannot start because virtualization is disabled. Compose, Docker targets, migration startup ordering and GitHub Actions checks are prepared. A production-like local optimized Next.js server and separate worker are used for final browser verification. Public hosting was not provisioned and no paid resource was created.
+
+Final rehearsal additionally found and fixed a revision/hangup race: an active simulated attempt now refreshes and submits under a revision-specific idempotency key before ending. A regression test covers this timing.

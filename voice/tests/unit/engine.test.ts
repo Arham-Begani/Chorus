@@ -258,6 +258,26 @@ describe('scope and reliability', () => {
     expect(m.tasks[0].state).toBe('blocked');
     expect(latest(m, m.tasks[0].id)).toBeUndefined();
   });
+  it('an active simulation refreshes if the user revises after terms but before hangup', () => {
+    const a = reserve(m, m.tasks[0]);
+    const sim = new SimulationAdapter();
+    for (let i = 0; i < 3; i++) {
+      a.dueAt = new Date(0).toISOString();
+      sim.step(m, a);
+    }
+    expect(a.phase).toBe(3);
+    revise(m, { ...m.constraints, budgetMinor: 900000 }, 'Budget revision before hangup');
+    a.dueAt = new Date(0).toISOString();
+    sim.step(m, a);
+    expect(a.status).toBe('in-progress');
+    expect(a.phase).toBe(1);
+    for (let i = 0; i < 3; i++) {
+      a.dueAt = new Date(0).toISOString();
+      sim.step(m, a);
+    }
+    expect(latest(m, m.tasks[0].id)?.revision).toBe(2);
+    expect(a.status).toBe('completed');
+  });
   it('second mission applies reusable delivery and setup constraints', () => {
     m = createMission('alice', 'equipment', 'simulation', defaultConstraints());
     finish();
