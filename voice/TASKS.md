@@ -12,3 +12,5 @@
 Work on locally achievable parts continues while live verification is blocked. See VERIFICATION.md and SESSION.md for measured results.
 
 Delivery decision, 2026-10-18: the owner selected simulation-ready delivery with documented live setup. D/E/F remain explicitly unverified; they are not represented as completed by simulation tests.
+
+Subsequent request: live setup is now underway. Supabase project/operator and two Bolna agents are configured locally; protected HTTPS callback probes passed. D/E/F still require actual authorized voice/call executions, current pricing/telephony verification and a separate call-cost allowance. The account currently supports conductor plus one outbound call. See integrations/LOCAL_LIVE_TEST.md and the latest VERIFICATION.md section.

@@ -63,3 +63,9 @@ jobs:
             /tmp/chorus-web.log
             /tmp/chorus-worker.log
       - run: docker build --target web -t chorus-web:ci . && docker build --target worker -t chorus-worker:ci .
+      - name: Validate HTTPS deployment configuration
+        env:
+          CHORUS_DOMAIN: chorus.example.com
+        run: |
+          docker compose -f compose.yaml -f compose.https.yaml config --quiet
+          docker run --rm -e CHORUS_DOMAIN=chorus.example.com -v "$PWD/Caddyfile:/etc/caddy/Caddyfile:ro" caddy:2-alpine caddy validate --config /etc/caddy/Caddyfile --adapter caddyfile

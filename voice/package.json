@@ -19,6 +19,9 @@
     "test:e2e": "playwright test",
     "setup": "tsx scripts/setup.ts",
     "bolna:tools": "tsx scripts/generate-tools.ts",
+    "bolna:tools:private": "tsx --env-file=.env scripts/generate-tools.ts --private",
+    "callbacks": "tsx --env-file=.env scripts/callback-gateway.ts",
+    "doctor": "tsx --env-file=.env scripts/doctor.ts",
     "format": "prettier --write ."
   },
   "dependencies": {

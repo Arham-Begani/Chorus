@@ -57,6 +57,8 @@ Production web runs with `npm start`; production worker with `node --import tsx 
 
 ## Live integration
 
+For an account-backed test without permanent hosting, start with [the local live-test guide](integrations/LOCAL_LIVE_TEST.md). `npm run doctor` reports missing setup without printing credentials; `npm run doctor -- --online` also checks read-only Supabase/Bolna reachability. Calling switches are never changed by diagnostics. Current Supabase publishable keys are supported; legacy anon keys remain a fallback.
+
 Read [integrations/BOLNA_SETUP.md](integrations/BOLNA_SETUP.md). It includes the first browser/backend proof, one authorized outbound structured-fact proof, and the three-call rehearsal. Prompts and generated role-specific tool definitions are included; regenerate placeholder schemas with `npm run bolna:tools`.
 
 Required outside this repository: Bolna API key and two agent ids, verified account concurrency/duration/pricing/retry settings, public HTTPS callbacks, Supabase credentials/account, independently generated callback/tool secrets, explicitly authorized participants in the server allowlist, a calling window and a separate approved call-cost budget. **Do not enable real mode merely to explore the UI.** Local auth is simulation-only. The real call path needs Supabase-authenticated ownership, allowlisted contacts and an approval card.

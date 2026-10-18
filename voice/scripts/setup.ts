@@ -13,3 +13,19 @@ if (existsSync('.env')) {
     'Created .env with random local credentials. Use DEMO_PASSWORD from .env to sign in.',
   );
 }
+if (process.argv.includes('--live-secrets')) {
+  let text = readFileSync('.env', 'utf8');
+  let count = 0;
+  for (const key of ['BOLNA_TOOL_SECRET', 'BOLNA_WEBHOOK_SECRET']) {
+    const line = new RegExp(`^${key}=(.*)$`, 'm');
+    const previous = text.match(line)?.[1].trim();
+    if (previous) continue;
+    const value = `${key}=${randomBytes(48).toString('hex')}`;
+    text = line.test(text) ? text.replace(line, value) : text.trimEnd() + '\n' + value + '\n';
+    count++;
+  }
+  writeFileSync('.env', text, { mode: 0o600 });
+  console.log(
+    `Generated ${count} missing callback/tool secrets privately. Existing values and live-call switches preserved.`,
+  );
+}

@@ -1,7 +1,18 @@
 import { afterEach, expect, it, vi } from 'vitest';
 import { BolnaAdapter, DispatchError } from '../../src/providers/bolna';
 import { sign, verify } from '../../src/server/auth';
+import { config, readiness } from '../../src/server/config';
 afterEach(() => vi.unstubAllEnvs());
+it('prefers Supabase publishable keys and preserves legacy anon-key configuration', () => {
+  vi.stubEnv('SUPABASE_PUBLISHABLE_KEY', 'sb_publishable_unit_only');
+  vi.stubEnv('SUPABASE_ANON_KEY', 'legacy-unit-only');
+  expect(config.supabaseKey).toBe('sb_publishable_unit_only');
+  expect(readiness().missing).not.toContain('SUPABASE_PUBLISHABLE_KEY');
+  vi.stubEnv('SUPABASE_PUBLISHABLE_KEY', '');
+  expect(config.supabaseKey).toBe('legacy-unit-only');
+  vi.stubEnv('SUPABASE_ANON_KEY', '');
+  expect(readiness().missing).toContain('SUPABASE_PUBLISHABLE_KEY');
+});
 it('uses documented execution endpoint with a server-side Bearer key', async () => {
   vi.stubEnv('BOLNA_API_KEY', 'unit-test-key');
   const id = '123e4567-e89b-42d3-a456-426614174000';

@@ -1,0 +1,17 @@
+# VM deployment overlay. Requires CHORUS_DOMAIN, DNS and inbound ports 80/443.
+# docker compose -f compose.yaml -f compose.https.yaml up --build -d
+services:
+  caddy:
+    image: caddy:2-alpine
+    environment:
+      CHORUS_DOMAIN: ${CHORUS_DOMAIN}
+    ports: ['80:80', '443:443', '443:443/udp']
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on: [web]
+    restart: unless-stopped
+volumes:
+  caddy_data:
+  caddy_config:
