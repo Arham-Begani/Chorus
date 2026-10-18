@@ -1,5 +1,7 @@
 # Chorus
 
+The separate CHORUS voice mission-control application lives in [voice/](voice/README.md), with its own setup, worker, database, tests and deployment instructions. The Midnight project documented below is preserved.
+
 A scam report that nobody can read until someone else independently makes the same one.
 
 See [idea.md](idea.md) for the concept.

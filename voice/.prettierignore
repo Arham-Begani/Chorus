@@ -1,0 +1,8 @@
+node_modules
+.next
+.data
+.env
+test-results
+playwright-report
+judge-role-cards.private.md
+package-lock.json
