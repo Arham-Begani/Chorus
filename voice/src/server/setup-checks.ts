@@ -50,7 +50,7 @@ export function setupChecks(env: Record<string, string | undefined>): SetupCheck
     const db = new URL(env.DATABASE_URL || '');
     database = ['postgres:', 'postgresql:'].includes(db.protocol) && !!db.hostname && !!db.username;
     if (
-      ['postgres:', 'postgresql:'].includes(db.protocol) &&
+      database &&
       (db.hostname.endsWith('.supabase.com') || db.hostname.endsWith('.supabase.co'))
     )
       database =
