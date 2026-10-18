@@ -72,6 +72,27 @@ jobs:
             /tmp/chorus-web.log
             /tmp/chorus-worker.log
       - run: docker build --target web -t chorus-web:ci . && docker build --target worker -t chorus-worker:ci .
+      - name: Rehearse the built container stack
+        env:
+          POSTGRES_PASSWORD: ci_disposable_compose_only
+        run: |
+          compose=(docker compose -p chorus-ci -f compose.yaml -f compose.ci.yaml)
+          cleanup() {
+            "${compose[@]}" logs --tail=60
+            "${compose[@]}" down -v
+          }
+          trap cleanup EXIT
+          "${compose[@]}" up -d --no-build
+          ready=false
+          for i in $(seq 1 60); do
+            if curl -sf http://localhost:3000/api/health; then ready=true; break; fi
+            sleep 2
+          done
+          test "$ready" = true
+          "${compose[@]}" restart worker
+          npm run test:e2e -- tests/e2e/mission.spec.ts
+          "${compose[@]}" stop web worker
+          bash scripts/verify-backup.sh "$("${compose[@]}" ps -q postgres)"
       - name: Validate HTTPS deployment configuration
         env:
           CHORUS_DOMAIN: chorus.example.com

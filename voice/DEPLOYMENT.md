@@ -1,6 +1,6 @@
 # Deploy web and worker
 
-No paid hosting account was provisioned. Docker files are prepared; this host has no Docker and WSL virtualization is disabled, so a Docker image run is not claimed as verified. GitHub CI builds images on Linux.
+No paid hosting account was provisioned. This Windows host has no Docker and WSL virtualization is disabled. GitHub CI builds both images on Linux and runs a disposable web/worker/migration/PostgreSQL stack using compose.ci.yaml, worker restart, desktop/mobile mission lifecycle tests and an isolated archive restore. See the current run for its measured outcome. This CI override deliberately uses local simulation auth and is never part of the production HTTPS command.
 
 Use a VM/container host that supports long-running Node processes, outbound HTTPS and PostgreSQL. A web-only serverless or Sites deployment is insufficient for the worker. A web deploy without a running worker will display missions but cannot coordinate research.
 

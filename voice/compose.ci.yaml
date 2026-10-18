@@ -1,0 +1,21 @@
+# Disposable GitHub CI only. Production uses compose.yaml + compose.https.yaml.
+services:
+  migrate:
+    image: chorus-worker:ci
+  web:
+    image: chorus-web:ci
+    environment:
+      AUTH_MODE: local
+      SIMULATION_ONLY: 'true'
+      ENABLE_REAL_CALLS: 'false'
+      APP_ORIGIN: ${APP_ORIGIN}
+      SESSION_SECRET: ${SESSION_SECRET}
+      DEMO_PASSWORD: ${DEMO_PASSWORD}
+  worker:
+    image: chorus-worker:ci
+    environment:
+      AUTH_MODE: local
+      SIMULATION_ONLY: 'true'
+      ENABLE_REAL_CALLS: 'false'
+      APP_ORIGIN: ${APP_ORIGIN}
+      SESSION_SECRET: ${SESSION_SECRET}
