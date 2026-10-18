@@ -8,7 +8,7 @@
   },
   "scripts": {
     "dev": "next dev --hostname 127.0.0.1",
-    "build": "next build",
+    "build": "next build && node scripts/sanitize-standalone.mjs",
     "start": "node scripts/start.mjs",
     "worker": "tsx --env-file=.env worker/index.ts",
     "db:migrate": "tsx --env-file=.env scripts/migrate.ts",
