@@ -3,8 +3,8 @@
 - [x] A. Schema, repository conventions, configuration, migrations.
 - [x] B. Engine: dependency evidence, timing/capacity/budget, revisions, stale approval, idempotency and uncertainty.
 - [x] C. Durable simulation through worker and UI.
-- [ ] D. Real browser and outbound proof — BLOCKED: Bolna credentials, public HTTPS callback and authorized participant/cost budget absent.
-- [ ] E. Real three-call coordination — blocked by D and account concurrency verification.
+- [ ] D. Real browser and outbound proof — awaiting participant, call-cost/time authorization and pricing review. Accounts and protected HTTPS callback probes are configured.
+- [ ] E. Real three-call coordination — blocked by D and higher account concurrency (current account supports two total sessions).
 - [ ] F. Spoken live revisions — blocked by D; tool contracts and browser control implemented locally.
 - [x] G. Mission control, evidence, approvals, pause and recovery.
 - [x] H. Equipment mission, local verification, container deployment preparation, demo and private role cards. Hosted deployment and live rehearsal remain unverified.

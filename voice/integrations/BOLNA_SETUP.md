@@ -14,4 +14,4 @@ For the first rehearsal with the dashboard and database kept local, follow [LOCA
 
 Recovery: a timeout on POST /call marks the attempt uncertain and occupies concurrency. Inspect provider call history. Enter the matching execution id in the uncertain card; CHORUS fetches it and checks agent and recipient before associating it. If provider history cannot resolve it, leave the attempt uncertain and use Bolna support; do not blindly redial. Pause attempts queued cancellation and blocks new admission; active termination is not promised.
 
-Credentials and participant authorization are currently missing. These steps have been prepared, not executed live.
+Account configuration and callback probes have been completed locally; actual browser and outbound call proof remain unverified. Participant, separate call-cost/time authorization and pricing review are required before enabling calls. See the latest VERIFICATION.md section for measured progress.
