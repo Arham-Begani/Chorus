@@ -89,8 +89,9 @@ jobs:
             sleep 2
           done
           test "$ready" = true
+          snapshot=$("${compose[@]}" exec -T -e CHORUS_CI_SMOKE=true worker node --import tsx scripts/container-smoke.ts seed)
           "${compose[@]}" restart worker
-          npm run test:e2e -- tests/e2e/mission.spec.ts
+          "${compose[@]}" exec -T -e CHORUS_CI_SMOKE=true worker node --import tsx scripts/container-smoke.ts verify "$snapshot"
           "${compose[@]}" stop web worker
           bash scripts/verify-backup.sh "$("${compose[@]}" ps -q postgres)"
       - name: Validate HTTPS deployment configuration
