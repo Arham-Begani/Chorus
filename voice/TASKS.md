@@ -1,0 +1,14 @@
+# Milestones
+
+- [x] A. Schema, repository conventions, configuration, migrations.
+- [x] B. Engine: dependency evidence, timing/capacity/budget, revisions, stale approval, idempotency and uncertainty.
+- [x] C. Durable simulation through worker and UI.
+- [ ] D. Real browser and outbound proof — BLOCKED: Bolna credentials, public HTTPS callback and authorized participant/cost budget absent.
+- [ ] E. Real three-call coordination — blocked by D and account concurrency verification.
+- [ ] F. Spoken live revisions — blocked by D; tool contracts and browser control implemented locally.
+- [x] G. Mission control, evidence, approvals, pause and recovery.
+- [x] H. Equipment mission, local verification, container deployment preparation, demo and private role cards. Hosted deployment and live rehearsal remain unverified.
+
+Work on locally achievable parts continues while live verification is blocked. See VERIFICATION.md and SESSION.md for measured results.
+
+Delivery decision, 2026-10-18: the owner selected simulation-ready delivery with documented live setup. D/E/F remain explicitly unverified; they are not represented as completed by simulation tests.

@@ -1,0 +1,114 @@
+[
+  {
+    "name": "get_mission_brief",
+    "description": "Refresh the current brief and shared evidence before every material question or proposal. JSON object: {}.",
+    "pre_call_message": "Let me check the shared mission brief.",
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "payload_json": {
+          "type": "string",
+          "description": "Refresh the current brief and shared evidence before every material question or proposal. JSON object: {}. Encode the object as JSON; do not include a token."
+        }
+      },
+      "required": ["payload_json"]
+    },
+    "key": "custom_task",
+    "value": {
+      "method": "POST",
+      "url": "https://YOUR-HTTPS-HOST/api/tools/get_mission_brief",
+      "api_token": "",
+      "headers": {
+        "x-chorus-tool-secret": "REPLACE_WITH_BOLNA_TOOL_SECRET"
+      },
+      "param": {
+        "token": "%(chorus_token)s",
+        "payload_json": "%(payload_json)s"
+      }
+    }
+  },
+  {
+    "name": "report_observation",
+    "description": "Record a sourced fact from this assigned phone call. JSON fields: key,text.",
+    "pre_call_message": "Let me check the shared mission brief.",
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "payload_json": {
+          "type": "string",
+          "description": "Record a sourced fact from this assigned phone call. JSON fields: key,text. Encode the object as JSON; do not include a token."
+        }
+      },
+      "required": ["payload_json"]
+    },
+    "key": "custom_task",
+    "value": {
+      "method": "POST",
+      "url": "https://YOUR-HTTPS-HOST/api/tools/report_observation",
+      "api_token": "",
+      "headers": {
+        "x-chorus-tool-secret": "REPLACE_WITH_BOLNA_TOOL_SECRET"
+      },
+      "param": {
+        "token": "%(chorus_token)s",
+        "payload_json": "%(payload_json)s"
+      }
+    }
+  },
+  {
+    "name": "submit_offer",
+    "description": "Submit explicitly reported or confirmed business terms after refreshing the brief. JSON fields: key,revision,terms with priceMinor integer paise,currency INR,description,confirmation reported or confirmed,optional capacity integer,readyAt ISO with offset,setupMinutes integer.",
+    "pre_call_message": "Let me check the shared mission brief.",
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "payload_json": {
+          "type": "string",
+          "description": "Submit explicitly reported or confirmed business terms after refreshing the brief. JSON fields: key,revision,terms with priceMinor integer paise,currency INR,description,confirmation reported or confirmed,optional capacity integer,readyAt ISO with offset,setupMinutes integer. Encode the object as JSON; do not include a token."
+        }
+      },
+      "required": ["payload_json"]
+    },
+    "key": "custom_task",
+    "value": {
+      "method": "POST",
+      "url": "https://YOUR-HTTPS-HOST/api/tools/submit_offer",
+      "api_token": "",
+      "headers": {
+        "x-chorus-tool-secret": "REPLACE_WITH_BOLNA_TOOL_SECRET"
+      },
+      "param": {
+        "token": "%(chorus_token)s",
+        "payload_json": "%(payload_json)s"
+      }
+    }
+  },
+  {
+    "name": "request_clarification",
+    "description": "Ask the mission owner about an unresolved fact. JSON fields: key,text.",
+    "pre_call_message": "Let me check the shared mission brief.",
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "payload_json": {
+          "type": "string",
+          "description": "Ask the mission owner about an unresolved fact. JSON fields: key,text. Encode the object as JSON; do not include a token."
+        }
+      },
+      "required": ["payload_json"]
+    },
+    "key": "custom_task",
+    "value": {
+      "method": "POST",
+      "url": "https://YOUR-HTTPS-HOST/api/tools/request_clarification",
+      "api_token": "",
+      "headers": {
+        "x-chorus-tool-secret": "REPLACE_WITH_BOLNA_TOOL_SECRET"
+      },
+      "param": {
+        "token": "%(chorus_token)s",
+        "payload_json": "%(payload_json)s"
+      }
+    }
+  }
+]

@@ -1,0 +1,65 @@
+name: CHORUS Voice
+on:
+  push:
+    branches: [main]
+    paths: ['voice/**', '.github/workflows/voice.yml']
+  pull_request:
+    paths: ['voice/**', '.github/workflows/voice.yml']
+permissions:
+  contents: read
+concurrency:
+  group: chorus-voice-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: chorus
+          POSTGRES_PASSWORD: chorus_ci_only
+          POSTGRES_DB: chorus
+        ports: ['55432:5432']
+        options: >-
+          --health-cmd "pg_isready -U chorus" --health-interval 5s
+          --health-timeout 5s --health-retries 10
+    defaults:
+      run:
+        working-directory: voice
+    env:
+      DATABASE_URL: postgres://chorus:chorus_ci_only@127.0.0.1:55432/chorus
+      APP_ORIGIN: http://localhost:3000
+      AUTH_MODE: local
+      SIMULATION_ONLY: 'true'
+      SESSION_SECRET: ci-only-64-character-session-secret-never-use-in-production-00000000
+      DEMO_PASSWORD: ci-local-password
+      ENABLE_REAL_CALLS: 'false'
+      NEXT_TELEMETRY_DISABLED: '1'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+          cache-dependency-path: voice/package-lock.json
+      - run: npm ci
+      - run: cp .env.example .env
+      - run: npm run db:migrate
+      - run: npm run typecheck && npm test && npm run test:integration && npm run build
+      - run: npx playwright install --with-deps chromium
+      - run: |
+          npm start > /tmp/chorus-web.log 2>&1 &
+          npm run worker > /tmp/chorus-worker.log 2>&1 &
+          for i in $(seq 1 30); do curl -sf http://localhost:3000/api/health && break || sleep 2; done
+          npm run test:e2e
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: browser-results
+          path: |
+            voice/test-results
+            voice/playwright-report
+            /tmp/chorus-web.log
+            /tmp/chorus-worker.log
+      - run: docker build --target web -t chorus-web:ci . && docker build --target worker -t chorus-worker:ci .

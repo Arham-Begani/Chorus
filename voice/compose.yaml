@@ -1,0 +1,43 @@
+services:
+  postgres:
+    image: postgres:17-bookworm
+    environment:
+      POSTGRES_DB: chorus
+      POSTGRES_USER: chorus
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes: [chorus_db:/var/lib/postgresql/data]
+    healthcheck:
+      test: [CMD-SHELL, pg_isready -U chorus -d chorus]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    restart: unless-stopped
+  migrate:
+    build: { context: ., target: worker }
+    env_file: .env
+    environment:
+      DATABASE_URL: postgres://chorus:${POSTGRES_PASSWORD}@postgres:5432/chorus
+    command: [node, --import, tsx, scripts/migrate.ts]
+    depends_on:
+      postgres: { condition: service_healthy }
+  web:
+    build: { context: ., target: web }
+    env_file: .env
+    environment:
+      DATABASE_URL: postgres://chorus:${POSTGRES_PASSWORD}@postgres:5432/chorus
+      AUTH_MODE: supabase
+    ports: [127.0.0.1:3000:3000]
+    depends_on:
+      migrate: { condition: service_completed_successfully }
+    restart: unless-stopped
+  worker:
+    build: { context: ., target: worker }
+    env_file: .env
+    environment:
+      DATABASE_URL: postgres://chorus:${POSTGRES_PASSWORD}@postgres:5432/chorus
+      AUTH_MODE: supabase
+    depends_on:
+      migrate: { condition: service_completed_successfully }
+    restart: unless-stopped
+volumes:
+  chorus_db:

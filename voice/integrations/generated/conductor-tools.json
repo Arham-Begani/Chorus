@@ -1,0 +1,142 @@
+[
+  {
+    "name": "propose_mission",
+    "description": "Draft the current mission from the owner’s spoken goal. JSON fields: key,title,goal,constraints with budgetMinor,currency INR,quantity,eventStart ISO with offset,timezone.",
+    "pre_call_message": "Let me check the shared mission brief.",
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "payload_json": {
+          "type": "string",
+          "description": "Draft the current mission from the owner’s spoken goal. JSON fields: key,title,goal,constraints with budgetMinor,currency INR,quantity,eventStart ISO with offset,timezone. Encode the object as JSON; do not include a token."
+        }
+      },
+      "required": ["payload_json"]
+    },
+    "key": "custom_task",
+    "value": {
+      "method": "POST",
+      "url": "https://YOUR-HTTPS-HOST/api/tools/propose_mission",
+      "api_token": "",
+      "headers": {
+        "x-chorus-tool-secret": "REPLACE_WITH_BOLNA_TOOL_SECRET"
+      },
+      "param": {
+        "token": "%(chorus_token)s",
+        "payload_json": "%(payload_json)s"
+      }
+    }
+  },
+  {
+    "name": "get_mission_brief",
+    "description": "Refresh the current brief and shared evidence before every material question or proposal. JSON object: {}.",
+    "pre_call_message": "Let me check the shared mission brief.",
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "payload_json": {
+          "type": "string",
+          "description": "Refresh the current brief and shared evidence before every material question or proposal. JSON object: {}. Encode the object as JSON; do not include a token."
+        }
+      },
+      "required": ["payload_json"]
+    },
+    "key": "custom_task",
+    "value": {
+      "method": "POST",
+      "url": "https://YOUR-HTTPS-HOST/api/tools/get_mission_brief",
+      "api_token": "",
+      "headers": {
+        "x-chorus-tool-secret": "REPLACE_WITH_BOLNA_TOOL_SECRET"
+      },
+      "param": {
+        "token": "%(chorus_token)s",
+        "payload_json": "%(payload_json)s"
+      }
+    }
+  },
+  {
+    "name": "request_approval",
+    "description": "Ask the owner to use an authenticated approval card. JSON fields: key,kind research or plan. This does not approve anything.",
+    "pre_call_message": "Let me check the shared mission brief.",
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "payload_json": {
+          "type": "string",
+          "description": "Ask the owner to use an authenticated approval card. JSON fields: key,kind research or plan. This does not approve anything. Encode the object as JSON; do not include a token."
+        }
+      },
+      "required": ["payload_json"]
+    },
+    "key": "custom_task",
+    "value": {
+      "method": "POST",
+      "url": "https://YOUR-HTTPS-HOST/api/tools/request_approval",
+      "api_token": "",
+      "headers": {
+        "x-chorus-tool-secret": "REPLACE_WITH_BOLNA_TOOL_SECRET"
+      },
+      "param": {
+        "token": "%(chorus_token)s",
+        "payload_json": "%(payload_json)s"
+      }
+    }
+  },
+  {
+    "name": "update_mission_constraints",
+    "description": "Revise constraints only at the authenticated browser owner’s request. JSON fields: key,reason,constraints with all five fields budgetMinor,currency INR,quantity,eventStart ISO,timezone.",
+    "pre_call_message": "Let me check the shared mission brief.",
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "payload_json": {
+          "type": "string",
+          "description": "Revise constraints only at the authenticated browser owner’s request. JSON fields: key,reason,constraints with all five fields budgetMinor,currency INR,quantity,eventStart ISO,timezone. Encode the object as JSON; do not include a token."
+        }
+      },
+      "required": ["payload_json"]
+    },
+    "key": "custom_task",
+    "value": {
+      "method": "POST",
+      "url": "https://YOUR-HTTPS-HOST/api/tools/update_mission_constraints",
+      "api_token": "",
+      "headers": {
+        "x-chorus-tool-secret": "REPLACE_WITH_BOLNA_TOOL_SECRET"
+      },
+      "param": {
+        "token": "%(chorus_token)s",
+        "payload_json": "%(payload_json)s"
+      }
+    }
+  },
+  {
+    "name": "initiate_approved_work",
+    "description": "Queue research only after the owner already approved the current revision. JSON fields: key. Never makes a purchase or reservation.",
+    "pre_call_message": "Let me check the shared mission brief.",
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "payload_json": {
+          "type": "string",
+          "description": "Queue research only after the owner already approved the current revision. JSON fields: key. Never makes a purchase or reservation. Encode the object as JSON; do not include a token."
+        }
+      },
+      "required": ["payload_json"]
+    },
+    "key": "custom_task",
+    "value": {
+      "method": "POST",
+      "url": "https://YOUR-HTTPS-HOST/api/tools/initiate_approved_work",
+      "api_token": "",
+      "headers": {
+        "x-chorus-tool-secret": "REPLACE_WITH_BOLNA_TOOL_SECRET"
+      },
+      "param": {
+        "token": "%(chorus_token)s",
+        "payload_json": "%(payload_json)s"
+      }
+    }
+  }
+]
