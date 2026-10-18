@@ -16,7 +16,7 @@ The form asks for team size, full name, the same email used to register, project
 
 **Submission link:** https://github.com/Arham-Begani/Chorus/tree/main/voice
 
-**Pitch deck:** use the checked CHORUS deck in the delivery outputs. Import/upload to Drive and verify anyone-with-the-link viewing before using its URL. Do not paste a local filesystem URL into the form. A repository link satisfies the separate submission-link field.
+**Pitch deck:** [CHORUS Buildathon pitch](https://docs.google.com/presentation/d/1jxlDhMXbVzT6sbEnf7j6L3BUSDWR5wP06I2qFlDGmnU). Six slides, with the actual simulation screenshots and an explicit live-validation boundary. The imported deck's full PDF export was rendered and visually reviewed after repairing missing screenshot media. **Public viewing still needs the owner to set Share → General access → Anyone with the link → Viewer**, then check this URL signed out. The Drive connector cannot set public-link permissions and this browser is signed out of Google. A private deck is not a usable judge link. Do not paste a local filesystem URL into the form.
 
 Team size, registered email and participant identity are owner-supplied. No application or final submission has been sent by the agent.
 

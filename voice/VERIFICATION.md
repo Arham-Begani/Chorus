@@ -2,6 +2,8 @@
 
 Latest local pass, **19 October 2026**: typecheck, 52 unit tests, 10 real PostgreSQL integration tests, optimized production build and 22 desktop/mobile browser tests passed (84 total). Windows startup restored missing web/worker processes and a repeated invocation reused the same process identities. Live provider executions remain unverified and disabled. The subsequent sections preserve earlier measurements and the submission/recovery changes. Linux archive/restore, image and HTTPS results are recorded by the current GitHub CI run.
 
+[Linux CI passed for source commit 7433531](https://github.com/Arham-Begani/Chorus/actions/runs/39162576978), including the full database archive/isolated restore with matching contents and RLS, 84 tests, production/Docker builds and Caddy/Compose HTTPS validation. Windows startup also restored a deliberately stopped worker. The local workspace was opened in the in-app browser with existing email/password sign-in; no auth settings changed. The six-slide Google pitch was exported to PDF and all slides visually reviewed after repairing missing screenshot media. Public pitch-link permission and final form submission remain owner actions, not completed claims.
+
 Date: 2026-10-18. Native Windows, Node 24.19.0, PostgreSQL 17.6. Dependencies are exact versions in package-lock.json; Next.js 16.4.2, React 19.3.1, pg-boss 12.38.0, Bolna Web Call SDK 3.0.1. The native PostgreSQL 18 package crashed during initialization; the dev helper was pinned to 17.6, which initialized and ran successfully. No system virtualization settings were changed.
 
 ## Landing, workspace and recovery pass — latest verification
