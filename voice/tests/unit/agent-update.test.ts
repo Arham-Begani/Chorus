@@ -46,7 +46,9 @@ it('preserves current providers, voice, guardrails and prompt extras while apply
     call_terminate: 120,
     auto_reschedule: false,
     custom_setting: 'preserve',
-    check_if_user_online: false,
+    check_if_user_online: true,
+    max_silence_repeats: 0,
+    trigger_user_online_message_after: 8,
   });
   expect(update.agent_prompts.task_1).toEqual({
     system_prompt: 'reviewed-prompt',

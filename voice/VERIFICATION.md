@@ -1,5 +1,15 @@
 # Verification record
 
+## No-input clarification and recovery configuration
+
+The owner confirmed that the 18:30 participant spoke after the greeting but received no reply. Re-fetching the exact matching recipient/agent execution still returned only the welcome, zero recognized speech/model turns and zero scoped tool activity. All six phone-agent executions today map to persisted attempts; the separate answered call around 12:20 has eleven human transcript turns. There is no evidence of a missing late quote or an untracked call.
+
+Private audio diagnostics measured the latest stereo recording at 20.496 seconds: the non-greeting channel averaged about -60.4 dBFS, versus -27.8 dBFS in the earlier 99.776-second call with recognized human speech. This is evidence of a very faint incoming recording track, not proof of a particular microphone, carrier or STT fault. No independent transcript or inferred terms were added to mission state. Private media is excluded from Git and submission packages.
+
+Configured recovery now plays a specific unmute check after eight seconds of undetected reply, uses no LLM silence re-prompts, retains the fifteen-second silence guard and 180-second maximum, and forbids the model from repeating the warning. Both configured agents passed exact source-prompt/profile/schema/cap/header readback and a separate read-only audit. No new calls, browser sessions or allowances were created. The provider's existing 09:00–20:00 guardrails and all prior reserves were preserved. Local checks and CI follow when measured; the recovery prompt and spoken quote collection still need live proof.
+
+Typecheck and **80 unit tests passed** locally. The parallel PostgreSQL run passed 21 tests but the existing fresh-worker restart test exceeded its explicit 30-second limit on this Windows host. A serial run with the normal worker stopped and real provider credentials disabled is being checked separately. No complete local integration/build/CI pass is inferred from that partial result. The temporary independent-transcription attempt produced no usable result, so only measured recording levels and provider telemetry support the diagnosis.
+
 ## New bounded call-quality test — 19 October, 18:30 IST
 
 PR #8 merged as **4d1c909c5c4a5a50d8e53c13a163c2c2e285187e**. [Linux CI for source 8f8b022 passed](https://github.com/Arham-Begani/Chorus/actions/runs/39257851714): **125 tests (79 unit, 22 PostgreSQL, 24 desktop/mobile browser)**, typecheck/build, both Docker images, actual Compose startup/worker recovery preserving attempts/source events, complete archive/isolated restore with RLS, HTTPS validation and GitGuardian. The local production app/database returned HTTP 200 with its normal simulation worker running. The new recording resolved to HTTP 200 audio/mpeg; media was not saved or published. Subsequent changes only document these results.
