@@ -1,5 +1,7 @@
 # Verification record
 
+Final result: [Linux CI for source a6f043a passed](https://github.com/Arham-Begani/Chorus/actions/runs/39201696662), and PR #4 merged as 88155a0. **100 tests passed: 60 unit, 16 PostgreSQL integration, 24 desktop/mobile browser.** Production and both container builds, actual Compose web/worker/migration/PostgreSQL startup and restart recovery, isolated full archive/restore including all four private RLS tables, HTTPS configuration and GitGuardian passed. The final local readiness-header check also passed on desktop and mobile after clearing the temporary harness's inherited grant settings. The local app/database health returned HTTP 200 and its separate simulation worker was restored. A rejected outbound request is still the only provider dispatch result; no live conversation or tool report is claimed.
+
 ## Reliability and attempted live rehearsal — 19 October 2026
 
 Local typecheck, **60 unit tests**, **16 PostgreSQL integration tests** and the optimized production build passed. The full **24 desktop/mobile browser tests** passed before the final readiness-header polish. Its focused rerun exposed inherited live-grant settings in the temporary harness; those are now explicitly cleared. Final focused and Linux CI results follow with the PR. New tests cover serialized cross-mission spending, retained allowances after uncertain minting, one browser lease, dated expiry, late artifacts, low-wallet terminal status, stable blocked rows, multiple conflict questions and live-session errors preserving operator sign-in.

@@ -1,6 +1,12 @@
 # Session handoff — 2026-10-19
 
-## Current reliability and live rehearsal pass
+## Final checkpoint
+
+PR #4 merged as **88155a0ef87206b903eff920c6d915a1a9ce666b** after [Linux CI](https://github.com/Arham-Begani/Chorus/actions/runs/39201696662) passed for source **a6f043a7d3d2655f2a2c3652020bfb72bf4db04e**. All **100 tests** (60 unit, 16 PostgreSQL integration, 24 desktop/mobile), production build, both Docker builds, running Compose stack/worker recovery, full archive/isolated restore including the RLS reservation ledger, HTTPS checks and GitGuardian passed. The final focused readiness-dialog checks passed on desktop and mobile. Web/DB health is HTTP 200 and the normal simulation worker is running; runtime identities are recorded privately by start-local.ps1. No new email-auth setup is needed.
+
+The first authorized request was rejected before dialing. The owner then replaced the destination; only the corrected number remains in CALL_ALLOWLIST. Bolna's resend cooldown cleared and the replacement OTP form is ready for private owner entry. Do not read the OTP field or send a blind repeat. The prepared second-attempt script requires its explicit manual flag, the recorded first rejection without execution, the same grant and remaining budget. Ordinary web/worker calling switches remain off. Next step after verification: one bounded attempt within the existing dated allowance, then inspect actual execution and structured evidence. D/E/F, permanent hosting and public pitch-link access remain unverified. Do not renew an expired grant or buy resources without the applicable authorization.
+
+## Reliability implementation notes (before merge)
 
 Branch `feat/live-call-reliability` starts from merged main b24b682 (PR #3). The owner requested further product improvements, supplied one destination privately, confirmed AI/transcript/recording consent and delegated a modest test window/spend choice. The dated authorization and number stay in ignored `.env`/`.data`; normal SIMULATION_ONLY=true / ENABLE_REAL_CALLS=false were preserved. A dedicated one-shot process enabled only that rehearsal, committed one attempt and cost reserve, then submitted one outbound request. Bolna returned HTTP 400 requiring trial-destination verification: no execution ID, conversation, observations or offers resulted. The mission was paused; its reserve remains in the durable ledger. Do not replay the script, rotate the grant or reset the ledger. After verification, explicitly prepare another bounded attempt within the remaining authorization and budget. Actual call proof remains pending.
 
