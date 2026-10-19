@@ -1,8 +1,33 @@
 import { afterEach, expect, it, vi } from 'vitest';
-import { BolnaAdapter, DispatchError } from '../../src/providers/bolna';
+import { BolnaAdapter, DispatchError, executionRecording } from '../../src/providers/bolna';
 import { sign, verify } from '../../src/server/auth';
 import { config, inCallingWindow, readiness } from '../../src/server/config';
 afterEach(() => vi.unstubAllEnvs());
+it('finds hosted carrier recordings while retaining valid primary URLs and rejecting unsafe evidence links', () => {
+  const nested = 'https://recordings.example.test/fixture.wav?signature=fixture';
+  expect(
+    executionRecording({ recording_url: null, telephony_data: { recording_url: nested } }),
+  ).toBe(nested);
+  expect(
+    executionRecording({
+      recording_url: 'https://recordings.example.test/primary.wav',
+      telephony_data: { recording_url: nested },
+    }),
+  ).toBe('https://recordings.example.test/primary.wav');
+  for (const unsafe of [
+    'http://example.test/audio',
+    'javascript:alert(1)',
+    'https://user:pass@example.test/audio',
+    'https://example.test/audio\n',
+    '/relative.wav',
+  ]) {
+    expect(executionRecording({ telephony_data: { recording_url: unsafe } })).toBeUndefined();
+    expect(
+      executionRecording({ recording_url: unsafe, telephony_data: { recording_url: nested } }),
+    ).toBe(nested);
+  }
+  expect(executionRecording({ telephony_data: 'unsupported metadata' })).toBeUndefined();
+});
 it('fails closed for invalid concurrency, hours and timezones', () => {
   vi.stubEnv('ACCOUNT_CONCURRENCY', 'NaN');
   expect(config.maxOutbound).toBe(0);
