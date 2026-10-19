@@ -72,11 +72,13 @@ Production web runs with `npm start`; production worker with `node --import tsx 
 
 ## Live integration
 
-For an account-backed test without permanent hosting, start with [the local live-test guide](integrations/LOCAL_LIVE_TEST.md). `npm run doctor` reports missing setup without printing credentials; `npm run doctor -- --online` also checks read-only Supabase/Bolna reachability. Calling switches are never changed by diagnostics. Current Supabase publishable keys are supported; legacy anon keys remain a fallback.
+For an account-backed test without permanent hosting, start with [the local live-test guide](integrations/LOCAL_LIVE_TEST.md). The phone icon in the workspace opens optional **Call readiness**, showing pending setup and the total test allowance without exposing numbers or credentials. Simulation remains available throughout. `npm run doctor` reports missing setup without printing credentials; `npm run doctor -- --online` also checks Supabase/Bolna reachability, both agents' actual duration/retry/tool/webhook bindings, account capacity and unauthenticated callback rejection. This probe never dials or changes configuration; it does not prove runtime tool substitution.
 
 Read [integrations/BOLNA_SETUP.md](integrations/BOLNA_SETUP.md). It includes the first browser/backend proof, one authorized outbound structured-fact proof, and the three-call rehearsal. Prompts and generated role-specific tool definitions are included; regenerate placeholder schemas with `npm run bolna:tools`.
 
 Required outside this repository: Bolna API key and two agent ids, verified account concurrency/duration/pricing/retry settings, public HTTPS callbacks, Supabase credentials/account, independently generated callback/tool secrets, explicitly authorized participants in the server allowlist, a calling window and a separate approved call-cost budget. **Do not enable real mode merely to explore the UI.** Local auth is simulation-only. The real call path needs Supabase-authenticated ownership, allowlisted contacts and an approval card.
+
+Every rehearsal also needs `LIVE_TEST_ID`, `LIVE_TEST_START_AT`, `LIVE_TEST_END_AT` (ISO timestamps with timezone, at most 24 hours apart), `LIVE_TEST_BUDGET_MINOR` and `BROWSER_COST_RESERVE_MINOR`. The dated authorization expires automatically. A private PostgreSQL ledger serializes phone and browser cost reservations across missions, tabs and restarts. The mission research allowance remains a separate outbound limit. Failed/uncertain attempts retain their reserve; deleting a mission does not reset the total. Do not rotate an authorization ID to bypass an exhausted budget. Reserves are conservative admission limits, not a guarantee of provider billing. A browser lease lasts the credential TTL plus bounded call duration and a margin, so an immediate reconnect may need to wait even after hanging up.
 
 ## Architecture and boundaries
 

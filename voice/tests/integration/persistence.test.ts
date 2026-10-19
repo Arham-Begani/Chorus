@@ -144,9 +144,122 @@ it('duplicate and out-of-order callbacks cannot duplicate actions or regress a t
   const after = await getMission(m.id, owner);
   expect(after.events).toHaveLength(before.events.length);
   await mutate(m.id, owner, (m) =>
+    applyExecution(m, a.id, {
+      ...payload,
+      recording_url: 'https://recordings.example.test/contract-fixture.wav',
+      transcript: 'A completed execution can gain its transcript and recording later.',
+    }),
+  );
+  const enriched = await getMission(m.id, owner);
+  expect(enriched.attempts[0].recordingUrl).toBe(
+    'https://recordings.example.test/contract-fixture.wav',
+  );
+  expect(enriched.attempts[0].transcript).toContain('gain its transcript');
+  expect(enriched.events.filter((e) => e.type === 'call.artifacts')).toHaveLength(1);
+  await mutate(m.id, owner, (m) =>
+    applyExecution(m, a.id, {
+      id: a.executionId,
+      status: 'completed',
+      recording_url: 'http://insecure.example.test/audio',
+    }),
+  );
+  expect((await getMission(m.id, owner)).attempts[0].recordingUrl).toBe(
+    enriched.attempts[0].recordingUrl,
+  );
+  await mutate(m.id, owner, (m) =>
     applyExecution(m, a.id, { id: a.executionId, status: 'ringing' }),
   );
   expect((await getMission(m.id, owner)).attempts[0].status).toBe('completed');
+});
+it('treats provider balance-low as terminal and releases the active call slot', async () => {
+  const m = createMission(owner, 'equipment', 'real', defaultConstraints());
+  const now = new Date().toISOString();
+  m.attempts.push({
+    id: randomUUID(),
+    taskId: m.tasks[0].id,
+    mode: 'real',
+    status: 'queued',
+    executionId: randomUUID(),
+    revision: 1,
+    phase: 0,
+    dueAt: now,
+    createdAt: now,
+    updatedAt: now,
+  });
+  await insert(m);
+  await mutate(m.id, owner, (snapshot) =>
+    applyExecution(snapshot, m.attempts[0].id, {
+      id: m.attempts[0].executionId,
+      status: 'balance-low',
+    }),
+  );
+  const after = await getMission(m.id, owner);
+  expect(after.attempts[0].status).toBe('failed');
+  expect(activeStatuses).not.toContain(after.attempts[0].status);
+  expect(after.tasks[0].question).toContain('wallet is low');
+});
+it('blocked budget conflicts do not rewrite the database on every idle tick', async () => {
+  const m = createMission(owner, 'equipment', 'simulation', defaultConstraints());
+  m.status = 'blocked';
+  m.tasks.forEach((t) => {
+    t.state = 'blocked';
+    t.rounds = 3;
+  });
+  m.offers = m.tasks.map((t) => ({
+    ...m.responses[t.kind][0],
+    id: randomUUID(),
+    taskId: t.id,
+    attemptId: randomUUID(),
+    mode: 'simulation',
+    revision: 1,
+    stale: false,
+    declined: false,
+    priceMinor: 900000,
+    createdAt: new Date().toISOString(),
+  }));
+  await insert(m);
+  await coordinateTick();
+  const version = async () =>
+    (await pool.query('SELECT xmin::text FROM chorus_missions WHERE id=$1', [m.id])).rows[0];
+  const before = await version();
+  await coordinateTick();
+  await coordinateTick();
+  expect(await version()).toEqual(before);
+});
+it('polls delayed terminal artifacts without another dispatch and stops once both arrive', async () => {
+  const m = createMission(owner, 'equipment', 'real', defaultConstraints());
+  m.status = 'paused';
+  m.attempts.push({
+    id: randomUUID(),
+    taskId: m.tasks[0].id,
+    mode: 'real',
+    status: 'completed',
+    executionId: randomUUID(),
+    revision: 1,
+    phase: 0,
+    dueAt: new Date().toISOString(),
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+    artifactPollCount: 0,
+    artifactNextPollAt: new Date(0).toISOString(),
+  });
+  await insert(m);
+  const provider = {
+    execution: async () => ({
+      id: m.attempts[0].executionId!,
+      status: 'completed',
+      transcript: 'Provider contract fixture, not a live call.',
+      recording_url: 'https://example.test/fixture.wav',
+    }),
+    dispatch: async () => {
+      throw new Error('Must never redial');
+    },
+  } as unknown as import('../../src/providers/bolna').BolnaAdapter;
+  await coordinateTick(provider);
+  const after = await getMission(m.id, owner);
+  expect(after.attempts).toHaveLength(1);
+  expect(after.attempts[0].transcript).toContain('contract fixture');
+  expect(after.attempts[0].artifactNextPollAt).toBeUndefined();
 });
 it('a stranded dispatch stays uncertain over repeated worker ticks and never redials', async () => {
   const m = createMission(owner, 'equipment', 'real', defaultConstraints());

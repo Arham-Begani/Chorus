@@ -34,6 +34,7 @@ import {
 import type { BolnaWebCall } from '@bolna/web-call';
 import type { Mission, Offer, TaskKind, Terms } from '../core/types';
 import ConductorPanel from './conductor-panel';
+import CallReadiness from './call-readiness';
 import { Brand } from './brand';
 import { ApiError, requestJSON as api } from '../client/api';
 import { exportBrief, missionGuidance, formatMoney as money } from '../core/presentation';
@@ -165,7 +166,7 @@ export default function MissionControl() {
     [notice, setNotice] = useState(''),
     [drawer, setDrawer] = useState(false),
     [modal, setModal] = useState<
-      'new' | 'constraints' | 'responses' | 'contacts' | 'conductor' | null
+      'new' | 'constraints' | 'responses' | 'contacts' | 'conductor' | 'readiness' | null
     >(null),
     [scenario, setScenario] = useState<'relocation' | 'equipment'>('relocation'),
     [mode, setMode] = useState<'simulation' | 'real'>('simulation'),
@@ -687,6 +688,14 @@ export default function MissionControl() {
               {m?.mode === 'real' ? 'Authorized participants only' : 'No phone calls are placed'}
             </span>
           </span>
+          <button
+            className="icon-button"
+            aria-label="Call readiness"
+            title="Call readiness"
+            onClick={() => setModal('readiness')}
+          >
+            <Phone size={17} />
+          </button>
         </header>
         <main id="mission" className="main-content">
           {missions.length > 0 && (
@@ -1475,28 +1484,32 @@ export default function MissionControl() {
             aria-label={
               modal === 'conductor'
                 ? 'Browser conductor'
-                : modal === 'new'
-                  ? 'New mission'
-                  : modal === 'constraints'
-                    ? 'Revise mission'
-                    : modal === 'contacts'
-                      ? 'Mission contacts'
-                      : 'Business responses'
+                : modal === 'readiness'
+                  ? 'Call readiness'
+                  : modal === 'new'
+                    ? 'New mission'
+                    : modal === 'constraints'
+                      ? 'Revise mission'
+                      : modal === 'contacts'
+                        ? 'Mission contacts'
+                        : 'Business responses'
             }
-            className={`modal ${modal === 'conductor' ? 'conductor-modal' : ''}`}
+            className={`modal ${modal === 'conductor' ? 'conductor-modal' : modal === 'readiness' ? 'readiness-modal' : ''}`}
             onClick={(e) => e.stopPropagation()}
           >
             <div className="modal-header">
               <h2>
                 {modal === 'conductor'
                   ? 'Your conductor'
-                  : modal === 'new'
-                    ? 'Start with a goal'
-                    : modal === 'constraints'
-                      ? 'Revise the mission'
-                      : modal === 'contacts'
-                        ? 'Review your contacts'
-                        : 'Configure business responses'}
+                  : modal === 'readiness'
+                    ? 'Ready for real conversations'
+                    : modal === 'new'
+                      ? 'Start with a goal'
+                      : modal === 'constraints'
+                        ? 'Revise the mission'
+                        : modal === 'contacts'
+                          ? 'Review your contacts'
+                          : 'Configure business responses'}
               </h2>
               <button
                 className="icon-button"
@@ -1507,6 +1520,7 @@ export default function MissionControl() {
                 <X size={18} />
               </button>
             </div>
+            {modal === 'readiness' && <CallReadiness />}
             {modal === 'conductor' && (
               <ConductorPanel
                 mission={m}

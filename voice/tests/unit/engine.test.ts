@@ -14,6 +14,7 @@ import {
   reserve,
   revise,
   submit,
+  replan,
 } from '../../src/core/engine';
 import { executeTool } from '../../src/server/tools';
 import { SimulationAdapter } from '../../src/providers/simulation';
@@ -46,6 +47,19 @@ const finish = () => {
 };
 beforeEach(() => {
   m = createMission('alice', 'relocation', 'simulation', defaultConstraints());
+});
+it('combines all questions for a task and does not emit repeat replanning events', () => {
+  finish();
+  m.offers.find((o) => o.taskId === m.tasks[0].id)!.capacity = 1;
+  m.offers.find((o) => o.taskId === m.tasks[0].id)!.confirmation = 'reported';
+  m.tasks[0].rounds = 1;
+  replan(m);
+  expect(m.tasks[0].question).toContain('awaiting confirmation');
+  expect(m.tasks[0].question).toContain('capacity');
+  const events = m.events.length;
+  replan(m);
+  replan(m);
+  expect(m.events).toHaveLength(events);
 });
 describe('coordination and evidence', () => {
   it('a catering fact changes the venue brief', () => {
@@ -234,6 +248,13 @@ describe('scope and reliability', () => {
         CALLING_WINDOW_START: '00:00',
         CALLING_WINDOW_END: '23:59',
         CALL_ALLOWLIST: '+919999999999',
+        LIVE_TEST_ID: 'unit-test-grant',
+        LIVE_TEST_START_AT: new Date(Date.now() - 60000).toISOString(),
+        LIVE_TEST_END_AT: new Date(Date.now() + 3600000).toISOString(),
+        LIVE_TEST_BUDGET_MINOR: '10000',
+        CALL_COST_RESERVE_MINOR: '5000',
+        BROWSER_COST_RESERVE_MINOR: '5000',
+        MAX_CALL_SECONDS: '180',
       });
       m.mode = 'real';
       expect(() => assertCanDial(m, m.tasks[0].id)).toThrow(/authorized/);

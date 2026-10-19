@@ -5,6 +5,25 @@ async function login(page: Page) {
   await page.getByRole('button', { name: 'Open mission control' }).click();
   await expect(page.locator('.topbar')).toBeVisible();
 }
+test('optional call readiness explains pending setup without blocking simulations or exposing secrets', async ({
+  page,
+}, info) => {
+  await login(page);
+  await page.getByRole('button', { name: 'Call readiness', exact: true }).click();
+  const dialog = page.getByRole('dialog', { name: 'Call readiness' });
+  await expect(dialog).toContainText('Simulation is ready. Live calling is off.');
+  await expect(dialog).toContainText('Consenting participants');
+  await expect(dialog).toContainText('Awaiting authorization');
+  await expect(dialog).toContainText('Numbers and credentials stay private.');
+  await dialog.getByRole('button', { name: 'Refresh setup' }).click();
+  await expect(dialog.getByRole('button', { name: 'Refresh setup' })).toBeEnabled();
+  await expect(dialog.getByRole('button', { name: 'Close dialog' })).toBeInViewport();
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  await dialog.screenshot({ path: `test-results/${info.project.name}-call-readiness.png` });
+  await dialog.getByRole('button', { name: 'Close dialog' }).click();
+  await page.getByRole('button', { name: 'Talk to conductor', exact: true }).click();
+  await expect(page.getByRole('dialog', { name: 'Browser conductor' })).toBeVisible();
+});
 test('landing example, FAQ and workspace entry are usable without an account', async ({
   page,
 }, info) => {

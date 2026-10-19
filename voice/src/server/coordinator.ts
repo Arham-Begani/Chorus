@@ -1,16 +1,17 @@
 import { activeStatuses, type Attempt, type CallStatus, type Mission } from '../core/types';
 import { event, evaluate, mergeStatus, replan, researchApproved, reserve } from '../core/engine';
 import { pool, mutate } from './db';
-import { config } from './config';
+import { config, inCallingWindow } from './config';
+import { livePolicy } from '../core/live-policy';
 import { assertCanDial, BolnaAdapter, DispatchError, executionSchema } from '../providers/bolna';
 import { SimulationAdapter } from '../providers/simulation';
+import { reserveLiveCost } from './live-budget';
+import { randomUUID } from 'node:crypto';
 const simulation = new SimulationAdapter();
 export function applyExecution(m: Mission, attemptId: string, input: unknown) {
   const data = executionSchema.parse(input);
   const a = m.attempts.find((a) => a.id === attemptId && a.mode === 'real');
   if (!a || a.executionId !== data.id) throw new Error('Unknown execution');
-  const key = `execution:${data.id}:${data.status}`;
-  if (m.processedKeys.includes(key)) return;
   const known: CallStatus[] = [
     'queued',
     'initiated',
@@ -20,19 +21,50 @@ export function applyExecution(m: Mission, attemptId: string, input: unknown) {
     'completed',
     'failed',
   ];
-  const failures = ['busy', 'no-answer', 'canceled', 'cancelled', 'error', 'stopped'];
+  const failures = [
+    'busy',
+    'no-answer',
+    'canceled',
+    'cancelled',
+    'error',
+    'stopped',
+    'balance-low',
+  ];
   let status: CallStatus;
   if (known.includes(data.status as CallStatus)) status = data.status as CallStatus;
   else if (failures.includes(data.status)) status = 'failed';
+  else if (['scheduled', 'rescheduled'].includes(data.status)) status = 'queued';
   else return;
-  a.status = mergeStatus(a.status, status);
-  a.updatedAt = new Date().toISOString();
-  if (a.status === 'completed') {
-    if (data.transcript) a.transcript = data.transcript;
-    if (data.recording_url && data.recording_url.startsWith('https://'))
+  const previous = a.status;
+  a.status = mergeStatus(previous, status);
+  const terminal = ['completed', 'failed'].includes(a.status);
+  let artifactsChanged = false;
+  // Transcripts/recordings can be attached after the first terminal callback.
+  // Deduplicate the actual state change, rather than discarding every repeated status.
+  if (terminal && ['completed', 'failed'].includes(status)) {
+    if (data.total_cost != null && data.total_cost !== a.providerCostCents) {
+      a.providerCostCents = data.total_cost;
+      artifactsChanged = true;
+    }
+    if (data.transcript && data.transcript !== a.transcript) {
+      a.transcript = data.transcript;
+      artifactsChanged = true;
+    }
+    if (
+      data.recording_url &&
+      /^https:\/\//.test(data.recording_url) &&
+      data.recording_url !== a.recordingUrl
+    ) {
       a.recordingUrl = data.recording_url;
+      artifactsChanged = true;
+    }
   }
-  if (['completed', 'failed'].includes(a.status)) {
+  if (previous === a.status && !artifactsChanged) return;
+  a.updatedAt = new Date().toISOString();
+  if (previous !== a.status) a.providerStatus = data.status;
+  if (terminal && previous !== a.status) {
+    a.artifactPollCount = 0;
+    a.artifactNextPollAt = new Date(Date.now() + 15000).toISOString();
     const t = m.tasks.find((t) => t.id === a.taskId)!;
     t.state = m.offers.some((o) => o.attemptId === a.id && !o.stale && !o.declined)
       ? 'complete'
@@ -41,10 +73,19 @@ export function applyExecution(m: Mission, attemptId: string, input: unknown) {
         : 'blocked';
     if (t.state === 'blocked')
       t.question =
-        'Call ended without current structured terms. Review evidence and explicitly retry if appropriate.';
+        data.status === 'balance-low'
+          ? 'Bolna could not place this call because the provider wallet is low. Review credits before an explicit retry.'
+          : 'Call ended without current structured terms. Review evidence and explicitly retry if appropriate.';
   }
-  m.processedKeys.push(key);
-  event(m, 'call.status', `Provider call status: ${a.status}`, a.id);
+  if (a.transcript && a.recordingUrl) delete a.artifactNextPollAt;
+  event(
+    m,
+    previous !== a.status ? 'call.status' : 'call.artifacts',
+    previous !== a.status
+      ? `Provider call status: ${a.status}`
+      : 'Provider evidence is now available.',
+    a.id,
+  );
   evaluate(m);
 }
 export function recoverDispatches(m: Mission, now = Date.now()) {
@@ -68,7 +109,8 @@ export async function coordinateTick(provider = new BolnaAdapter()) {
       `SELECT id FROM chorus_missions
        WHERE status IN ('running','blocked')
           OR EXISTS (SELECT 1 FROM jsonb_array_elements(state->'attempts') AS a(value)
-                     WHERE a.value->>'status' = ANY($1::text[]))
+                     WHERE a.value->>'status' = ANY($1::text[])
+                        OR (a.value->>'mode'='real' AND a.value ? 'artifactNextPollAt'))
        ORDER BY created_at`,
       [activeStatuses],
     );
@@ -90,7 +132,7 @@ export async function coordinateTick(provider = new BolnaAdapter()) {
     let activeReal: number = active.rows[0].count;
     const dispatches: { missionId: string; attempt: Attempt }[] = [];
     for (const { id } of rows.rows) {
-      await mutate(id, undefined, (m) => {
+      await mutate(id, undefined, async (m, client) => {
         if (
           m.status === 'paused' ||
           !researchApproved(m) ||
@@ -105,6 +147,7 @@ export async function coordinateTick(provider = new BolnaAdapter()) {
           if (slots <= 0) break;
           if (m.attempts.some((a) => a.taskId === t.id && activeStatuses.includes(a.status)))
             continue;
+          const attemptId = randomUUID();
           if (m.mode === 'real') {
             try {
               assertCanDial(m, t.id);
@@ -112,8 +155,10 @@ export async function coordinateTick(provider = new BolnaAdapter()) {
                 throw new Error('Mission calling limit reached');
               if (m.callReservedMinor + config.reserveMinor > m.callBudgetMinor)
                 throw new Error('Approved call-cost budget exhausted; authorize a new budget');
+              await reserveLiveCost(client, m.id, attemptId, 'phone');
             } catch (e) {
               t.state = 'blocked';
+              t.dispatchBlocked = true;
               t.question = (e as Error).message;
               event(m, 'dispatch.blocked', t.question);
               continue;
@@ -121,7 +166,7 @@ export async function coordinateTick(provider = new BolnaAdapter()) {
             m.callReservedMinor += config.reserveMinor;
             activeReal++;
           }
-          const a = reserve(m, t);
+          const a = reserve(m, t, attemptId);
           slots--;
           if (m.mode === 'simulation') {
             a.status = 'queued';
@@ -161,7 +206,12 @@ export async function coordinateTick(provider = new BolnaAdapter()) {
             const a = m.attempts.find((a) => a.id === attempt.id)!;
             a.status = e instanceof DispatchError && !e.uncertain ? 'failed' : 'uncertain';
             a.error = (e as Error).message;
-            if (a.status === 'failed') m.tasks.find((t) => t.id === a.taskId)!.state = 'blocked';
+            if (a.status === 'failed') {
+              const t = m.tasks.find((t) => t.id === a.taskId)!;
+              t.state = 'blocked';
+              t.dispatchBlocked = true;
+              t.question = a.error;
+            }
             event(m, `call.${a.status}`, a.error!, a.id);
           });
         }
@@ -174,13 +224,28 @@ export async function coordinateTick(provider = new BolnaAdapter()) {
         (a) =>
           a.mode === 'real' &&
           a.executionId &&
-          activeStatuses.includes(a.status) &&
-          Date.now() - Date.parse(a.updatedAt) > 5000,
+          ((activeStatuses.includes(a.status) && Date.now() - Date.parse(a.updatedAt) > 5000) ||
+            (a.artifactNextPollAt && Date.parse(a.artifactNextPollAt) <= Date.now())),
       )) {
         try {
-          if (m.status === 'paused' && a.status === 'queued')
+          if (!activeStatuses.includes(a.status)) {
+            await mutate(id, undefined, (snapshot) => {
+              const stored = snapshot.attempts.find((x) => x.id === a.id)!;
+              stored.artifactPollCount = (stored.artifactPollCount || 0) + 1;
+              if (stored.artifactPollCount >= 6) delete stored.artifactNextPollAt;
+              else stored.artifactNextPollAt = new Date(Date.now() + 30000).toISOString();
+            });
+          }
+          if (
+            (m.status === 'paused' ||
+              !inCallingWindow() ||
+              livePolicy(process.env).state !== 'active') &&
+            a.status === 'queued'
+          )
             await provider.stopPending(a.executionId!);
           const data = await provider.execution(a.executionId!);
+          if (['scheduled', 'rescheduled'].includes(data.status))
+            await provider.stopPending(a.executionId!);
           await mutate(id, undefined, (m) => applyExecution(m, a.id, data));
         } catch {
           /* Persisted call remains eligible for later polling; never dispatch it again. */

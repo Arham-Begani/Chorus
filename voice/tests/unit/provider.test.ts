@@ -1,8 +1,17 @@
 import { afterEach, expect, it, vi } from 'vitest';
 import { BolnaAdapter, DispatchError } from '../../src/providers/bolna';
 import { sign, verify } from '../../src/server/auth';
-import { config, readiness } from '../../src/server/config';
+import { config, inCallingWindow, readiness } from '../../src/server/config';
 afterEach(() => vi.unstubAllEnvs());
+it('fails closed for invalid concurrency, hours and timezones', () => {
+  vi.stubEnv('ACCOUNT_CONCURRENCY', 'NaN');
+  expect(config.maxOutbound).toBe(0);
+  vi.stubEnv('CALLING_TIMEZONE', 'Invalid/Zone');
+  expect(inCallingWindow()).toBe(false);
+  vi.stubEnv('CALLING_TIMEZONE', 'Asia/Kolkata');
+  vi.stubEnv('CALLING_WINDOW_START', 'tomorrow');
+  expect(inCallingWindow()).toBe(false);
+});
 it('prefers Supabase publishable keys and preserves legacy anon-key configuration', () => {
   vi.stubEnv('SUPABASE_PUBLISHABLE_KEY', 'sb_publishable_unit_only');
   vi.stubEnv('SUPABASE_ANON_KEY', 'legacy-unit-only');
@@ -52,4 +61,21 @@ it('signed capabilities reject modification', () => {
   const token = sign({ role: 'phone', expires: Date.now() + 10000 });
   expect(verify<{ role: string }>(token).role).toBe('phone');
   expect(() => verify(token.replace('phone', 'conductor') + 'x')).toThrow();
+});
+it('explains a provider verification rejection without disclosing its response or destination', async () => {
+  vi.stubEnv('BOLNA_API_KEY', 'unit-test-key');
+  const provider = new BolnaAdapter(
+    vi
+      .fn()
+      .mockResolvedValue(
+        Response.json(
+          { message: 'Trial number +19999999999 must be verified; private request details' },
+          { status: 400 },
+        ),
+      ),
+  );
+  await expect(provider.api('/call', {})).rejects.toMatchObject({
+    uncertain: false,
+    message: 'Bolna returned HTTP 400. Verify the test destination in Bolna before trying again.',
+  });
 });

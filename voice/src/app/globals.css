@@ -1,4 +1,78 @@
 @import 'tailwindcss';
+.call-readiness {
+  padding: 24px;
+}
+.call-readiness-intro {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+}
+.call-readiness p {
+  margin: 4px 0 0;
+  color: var(--muted);
+  font-size: var(--small);
+}
+.readiness-checks {
+  list-style: none;
+  padding: 0;
+  margin: 24px 0;
+}
+.readiness-checks li {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 16px 0;
+  border-top: 1px solid var(--border);
+}
+.readiness-checks li > div {
+  flex: 1;
+  min-width: 0;
+}
+.readiness-mark {
+  color: var(--warning);
+  padding-top: 2px;
+}
+.readiness-mark.done {
+  color: var(--success);
+}
+.readiness-budget {
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr;
+  gap: 16px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  padding: 16px;
+  border-radius: var(--r-sm);
+}
+.readiness-budget > div {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.call-readiness .readiness-note {
+  margin-top: 16px;
+}
+.readiness-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-top: 24px;
+}
+@media (max-width: 600px) {
+  .call-readiness {
+    padding: 16px;
+  }
+  .readiness-budget {
+    grid-template-columns: 1fr 1fr;
+  }
+  .readiness-budget > div:first-child {
+    grid-column: 1 / -1;
+  }
+  .readiness-footer {
+    flex-wrap: wrap;
+  }
+}
 :root {
   --bg: #0d1115;
   --surface: #13191f;
@@ -1270,6 +1344,29 @@ kbd {
 }
 .modal .caption {
   font-size: var(--label);
+}
+.readiness-modal {
+  display: flex;
+  flex-direction: column;
+  padding: 0;
+  overflow: hidden;
+}
+.readiness-modal > .modal-header {
+  flex-shrink: 0;
+  padding: 20px 24px;
+  margin: 0;
+  border-bottom: 1px solid var(--border);
+}
+.readiness-modal .call-readiness {
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+.readiness-modal .call-readiness p {
+  margin: 4px 0 0;
+}
+.readiness-modal .call-readiness .readiness-note {
+  margin-top: 16px;
 }
 .form-grid {
   display: grid;

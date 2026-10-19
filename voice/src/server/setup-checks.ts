@@ -1,4 +1,5 @@
 export type SetupCheck = { name: string; ok: boolean; detail: string };
+import { livePolicy } from '../core/live-policy';
 export function setupChecks(env: Record<string, string | undefined>): SetupCheck[] {
   const checks: SetupCheck[] = [];
   const check = (name: string, ok: boolean, detail: string) => checks.push({ name, ok, detail });
@@ -49,10 +50,7 @@ export function setupChecks(env: Record<string, string | undefined>): SetupCheck
   try {
     const db = new URL(env.DATABASE_URL || '');
     database = ['postgres:', 'postgresql:'].includes(db.protocol) && !!db.hostname && !!db.username;
-    if (
-      database &&
-      (db.hostname.endsWith('.supabase.com') || db.hostname.endsWith('.supabase.co'))
-    )
+    if (database && (db.hostname.endsWith('.supabase.com') || db.hostname.endsWith('.supabase.co')))
       database =
         (db.port || '5432') === '5432' &&
         ['verify-full', 'verify-ca'].includes(db.searchParams.get('sslmode') || '');
@@ -130,6 +128,12 @@ export function setupChecks(env: Record<string, string | undefined>): SetupCheck
     'provider limits reviewed',
     env.LIVE_AGENT_LIMITS_VERIFIED === 'true',
     'Manually verify duration cap, disabled retries and worst-case pricing before setting true.',
+  );
+  const policy = livePolicy(env);
+  check(
+    'dated test authorization',
+    policy.valid && policy.state === 'active',
+    'Set LIVE_TEST_ID, LIVE_TEST_START_AT/END_AT (ISO timestamps with timezone, at most 24 hours), LIVE_TEST_BUDGET_MINOR and BROWSER_COST_RESERVE_MINOR after explicit authorization.',
   );
   return checks;
 }

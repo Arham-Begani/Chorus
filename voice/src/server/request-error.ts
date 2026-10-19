@@ -16,7 +16,10 @@ export function requestError(error: unknown) {
       : error instanceof SyntaxError
         ? 'The request contains invalid JSON. Check the format and try again.'
         : failure?.message || 'CHORUS could not complete the request.';
-  const auth = /Sign in|Session|token|authentication|scope|Origin|loopback/i.test(message),
+  const auth =
+      /^(?:Sign in required|Session expired|Invalid token|Origin rejected|Local auth requires loopback|Authentication is not configured|Tool authentication rejected|Invalid or expired scope|Phone scope required|Call capability is no longer active)$/i.test(
+        message,
+      ),
     stale = /mission changed|stale.*revision|approval is stale/i.test(message);
   return {
     status: auth ? 401 : message === 'Mission not found' ? 404 : stale ? 409 : 400,

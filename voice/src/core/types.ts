@@ -66,6 +66,7 @@ export interface Task {
   state: 'pending' | 'active' | 'complete' | 'blocked';
   question: string;
   rounds: number;
+  dispatchBlocked?: boolean;
 }
 export interface Attempt {
   id: string;
@@ -85,6 +86,10 @@ export interface Attempt {
   costMinor?: number;
   recordingUrl?: string;
   transcript?: string;
+  artifactPollCount?: number;
+  artifactNextPollAt?: string;
+  providerStatus?: string;
+  providerCostCents?: number;
 }
 export interface Observation {
   id: string;

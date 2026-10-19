@@ -70,7 +70,7 @@ export async function insert(m: Mission) {
 export async function mutate<T>(
   id: string,
   ownerId: string | undefined,
-  fn: (m: Mission) => T | Promise<T>,
+  fn: (m: Mission, client: PoolClient) => T | Promise<T>,
 ): Promise<T> {
   const c = await pool.connect();
   try {
@@ -79,10 +79,10 @@ export async function mutate<T>(
     const m = r.rows[0]?.state as Mission | undefined;
     if (!m || (ownerId && m.ownerId !== ownerId)) throw new Error('Mission not found');
     const before = structuredClone(m);
-    const result = await fn(m);
+    const result = await fn(m, c);
     // Reads, duplicate commands and idle worker ticks keep their row lock but do not
     // rewrite the aggregate, projections and timestamps when nothing changed.
-    if (!isDeepStrictEqual(before, m)) await save(c, m);
+    if (!isDeepStrictEqual(before, JSON.parse(JSON.stringify(m)))) await save(c, m);
     await c.query('COMMIT');
     return result;
   } catch (e) {

@@ -2,6 +2,8 @@
 
 This path keeps CHORUS and its authoritative PostgreSQL database on this computer. Supabase supplies operator authentication; Bolna reaches only an authenticated callback gateway over temporary HTTPS. It is a development rehearsal, not a public deployment. No calls have been verified yet.
 
+For each authorized rehearsal, configure `LIVE_TEST_ID`, `LIVE_TEST_START_AT`, `LIVE_TEST_END_AT`, `LIVE_TEST_BUDGET_MINOR`, `CALL_COST_RESERVE_MINOR` and `BROWSER_COST_RESERVE_MINOR` privately. Start/end need explicit ISO timezone offsets and span at most 24 hours. The total ceiling covers both browser and phone attempts across missions and restarts; each outbound research approval also has its own limit. Reservations survive failed/uncertain responses and mission deletion. The phone icon in `/app` displays a secret-free readiness/budget summary. The online doctor now verifies actual agent bindings and callback reachability, without dialing.
+
 ## 1. Supabase project and operator
 
 Create a dedicated CHORUS project in the owner's chosen organization. Existing projects and their users stay untouched. Choose a nearby region and review the project's quoted cost before any paid creation. For this first test do not migrate the local mission database: Supabase Auth works independently of where CHORUS stores missions.
