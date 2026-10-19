@@ -6,6 +6,7 @@
 - [x] C2. Number-free browser conductor: microphone with typed fallback, natural constraint extraction, two mission types, persisted conversation, revision/status/pause/resume/retry controls and explicit approval handoff.
 - [x] C3. Public landing page and interactive example; dedicated workspace, next-step guidance, mobile navigation, fixed conductor composer, command suggestions and sourced brief export.
 - [x] C4. Recovery: same-command network retry, stale-edit conflict, sanitized service failure, cached refresh state/backoff, microphone watchdog and shared retry authorization/term invalidation.
+- [x] C5. Phone conversation controls: silent canonical tools, native brief/fact arguments, remembered facts, collection/confirmation guidance, durable repeat/error stop, scoped tool-error recovery, source configuration sync and synthetic authenticated quote-flow checks. Revised speech still needs a live retest.
 - [ ] D. Real browser and outbound proof — one answered outbound call completed in 100 seconds with a transcript and server-persisted scoped brief read. A second destination returned busy. Structured observations/offers, the revised conversation prompt and paid browser voice still need live proof. Both grants' provisional reserves remain intact; no further call scheduled.
 - [ ] E. Real three-call coordination — blocked by D and higher account concurrency (current account supports two total sessions).
 - [ ] F. Spoken live revisions — blocked by D; tool contracts and browser control implemented locally.

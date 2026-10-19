@@ -22,5 +22,6 @@ COPY --from=build --chown=node:node /app/src ./src
 COPY --from=build --chown=node:node /app/worker ./worker
 COPY --from=build --chown=node:node /app/scripts ./scripts
 COPY --from=build --chown=node:node /app/migrations ./migrations
+COPY --from=build --chown=node:node /app/integrations ./integrations
 USER node
 CMD ["node","--import","tsx","worker/index.ts"]

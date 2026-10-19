@@ -22,7 +22,15 @@ export function requestError(error: unknown) {
       ),
     stale = /mission changed|stale.*revision|approval is stale/i.test(message);
   return {
-    status: auth ? 401 : message === 'Mission not found' ? 404 : stale ? 409 : 400,
+    status: auth
+      ? 401
+      : message === 'This phone agent cannot change constraints, approvals or permissions'
+        ? 403
+        : message === 'Mission not found'
+          ? 404
+          : stale
+            ? 409
+            : 400,
     error: message,
     ...(stale ? { code: 'REVISION_CONFLICT' } : {}),
   };

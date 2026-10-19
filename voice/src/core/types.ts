@@ -92,6 +92,11 @@ export interface Attempt {
   providerCostCents?: number;
   providerDurationSeconds?: number;
   providerBillingSettled?: boolean;
+  briefReadCount?: number;
+  unchangedBriefReads?: number;
+  phoneProgressKey?: string;
+  phoneToolFailures?: number;
+  phoneEndReason?: 'repeated-brief-reads' | 'repeated-tool-errors' | 'owner-clarification';
 }
 export interface Observation {
   id: string;

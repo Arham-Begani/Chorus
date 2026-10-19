@@ -23,7 +23,7 @@ import {
 import { constraintsSchema, kindSchema, termsSchema, type Mission } from '../../../core/types';
 import { BolnaAdapter } from '../../../providers/bolna';
 import { applyExecution } from '../../../server/coordinator';
-import { executeTool } from '../../../server/tools';
+import { executeToolRequest } from '../../../server/tools';
 import { conduct } from '../../../server/conductor';
 import { goalConstraints } from '../../../core/conductor';
 import { requestError } from '../../../server/request-error';
@@ -100,12 +100,8 @@ async function handle(req: Request, { params }: { params: Promise<{ path: string
       const raw = await body(req);
       const token = z.string().parse(raw.token);
       const scope = toolScope(req, token);
-      const input =
-        raw.payload_json !== undefined
-          ? { ...JSON.parse(z.string().max(16000).parse(raw.payload_json)), token }
-          : raw;
       const result = await mutate(scope.missionId, scope.ownerId, (m) =>
-        executeTool(m, scope, path[1], input),
+        executeToolRequest(m, scope, path[1], raw),
       );
       return json(result);
     }

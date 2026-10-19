@@ -81,13 +81,23 @@ export function applyExecution(m: Mission, attemptId: string, input: unknown) {
     a.artifactPollCount = 0;
     a.artifactNextPollAt = new Date(Date.now() + 15000).toISOString();
     const t = m.tasks.find((t) => t.id === a.taskId)!;
+    if (a.phoneEndReason) t.dispatchBlocked = true;
     t.state = m.offers.some((o) => o.attemptId === a.id && !o.stale && !o.declined)
       ? 'complete'
-      : a.revision < m.revision && t.rounds < 3
-        ? 'pending'
-        : 'blocked';
+      : a.phoneEndReason
+        ? 'blocked'
+        : a.revision < m.revision && t.rounds < 3
+          ? 'pending'
+          : 'blocked';
     if (t.state === 'blocked')
       t.question =
+        (a.phoneEndReason === 'repeated-brief-reads'
+          ? 'The conversation repeated unchanged checks. Review the brief and call quality before explicitly retrying.'
+          : a.phoneEndReason === 'repeated-tool-errors'
+            ? 'The call could not save its results after one correction. Review the tool error before explicitly retrying.'
+            : a.phoneEndReason === 'owner-clarification'
+              ? 'The participant needs an essential detail from the owner. Resolve the clarification before another call.'
+              : '') ||
         (
           {
             busy: 'The participant’s line was busy. Confirm they are available before explicitly authorizing another attempt.',

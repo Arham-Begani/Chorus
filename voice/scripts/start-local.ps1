@@ -14,7 +14,7 @@ try {
     foreach ($candidate in $candidates) {
         if ($candidate -and (Test-Path -LiteralPath $candidate)) {
             $version = & $candidate -p 'process.versions.node'
-            if ([version]$version -ge [version]'24.12.0') { $nodeExe = $candidate; break }
+            if ([version]$version -ge [version]'24.12.0') { $nodeExe = (Resolve-Path -LiteralPath $candidate).Path; break }
         }
     }
     if (-not $nodeExe) { throw 'Install Node 24.12+ or set CHORUS_NODE_EXE to its node.exe.' }
@@ -74,16 +74,25 @@ try {
     if (-not $webReady) { throw 'Web readiness failed. Inspect .data/web-runtime.error.log.' }
     if (-not (Is-RecordedNode 'worker' 'worker/index.ts')) {
         $null = Start-ServiceNode 'worker' @('--env-file=.env','--import','tsx','worker/index.ts')
-        $workerReady = $false
-        for ($attempt = 0; $attempt -lt 30; $attempt++) {
-            if (Test-Path -LiteralPath '.data/worker-runtime.log') {
-                if (Select-String -LiteralPath '.data/worker-runtime.log' -SimpleMatch 'CHORUS worker ready' -Quiet) { $workerReady = $true; break }
-            }
-            if (-not (Is-RecordedNode 'worker' 'worker/index.ts')) { break }
-            Start-Sleep -Seconds 1
-        }
-        if (-not $workerReady) { throw 'Worker readiness failed. Inspect .data/worker-runtime.error.log.' }
     }
+    $workerReady = $false
+    for ($attempt = 0; $attempt -lt 90; $attempt++) {
+        if (-not (Is-RecordedNode 'worker' 'worker/index.ts')) {
+            if ($attempt -ge 5 -and -not (Get-Process -Id $runtime['worker'] -ErrorAction SilentlyContinue)) { break }
+            Start-Sleep -Seconds 1
+            continue
+        }
+        $workerProcess = Get-CimInstance Win32_Process -Filter "ProcessId = $($runtime['worker'])" -ErrorAction SilentlyContinue
+        if ($workerProcess -and (Test-Path -LiteralPath '.data/worker-runtime.log')) {
+            $workerLog = Get-Item -LiteralPath '.data/worker-runtime.log'
+            if ($workerLog.LastWriteTimeUtc -ge $workerProcess.CreationDate.ToUniversalTime() -and
+                (Select-String -LiteralPath $workerLog.FullName -SimpleMatch 'CHORUS worker ready' -Quiet)) {
+                $workerReady = $true; break
+            }
+        }
+        Start-Sleep -Seconds 1
+    }
+    if (-not $workerReady) { throw 'Worker readiness failed. Inspect .data/worker-runtime.error.log.' }
     Write-Output 'CHORUS simulation is ready: http://localhost:3000/app'
     Write-Output 'Web, PostgreSQL and the separate worker are running in the background. Email login is unchanged.'
     Write-Output 'After a reboot, run this command again. Real calls remain disabled.'
