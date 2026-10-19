@@ -1,5 +1,11 @@
 # Verification record
 
+## Two-participant live result and context correction
+
+After explicit consent, readiness and INR100 additional spend approval for 19 October 12:00–12:45 IST, the persisted equipment/delivery rehearsal made one request per destination, sequentially with 180-second caps. Equipment returned busy. Delivery connected and completed after **100 seconds**, reported **12 US cents** with billing pending, and returned a transcript. Its real attempt's lastBrief was updated by the authenticated scoped phone-tool route during the call. This proves one answered outbound conversation, runtime capability substitution and live brief retrieval; provider tool_call_logs remained empty. No structured observations/offers or live coordination were produced. Normal flags remain disabled, the mission is paused and temporary callbacks stopped. No automatic retry or further call was made.
+
+Transcript review exposed missing mission/service context and repetitive identity handling. The scoped brief now includes the operator's goal/title and task kind/title; the prompt explains explicit rehearsals and missing details without inventing an organizer or promising callbacks. Typecheck, all **63 unit tests** and production build passed, including a scoped real-phone context/private-data regression. This is a targeted correction, not evidence that the revised conversation has been retested live. Final CI results are recorded with the follow-up PR. Earlier measurements below describe older checkpoints.
+
 ## Final merged verification and bounded phone rehearsal
 
 [Linux CI passed for source 8a1d2e5](https://github.com/Arham-Begani/Chorus/actions/runs/39203150889); PR #5 merged as 344378b. **105 tests passed: 62 unit, 19 PostgreSQL integration, 24 desktop/mobile browser.** Typecheck, optimized production build, both Docker builds, actual Compose startup and worker restart preserving the same attempts/source events, full archive/isolated restore with matching contents and RLS, HTTPS validation and GitGuardian passed. The final local readiness-dialog checks passed on desktop/mobile. Subsequent changes are documentation only.

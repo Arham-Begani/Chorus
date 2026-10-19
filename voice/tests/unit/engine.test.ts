@@ -62,6 +62,31 @@ it('combines all questions for a task and does not emit repeat replanning events
   expect(m.events).toHaveLength(events);
 });
 describe('coordination and evidence', () => {
+  it('gives a scoped real phone tool enough service context without exposing private mission data', () => {
+    m = createMission(
+      'private-owner-id',
+      'equipment',
+      'real',
+      defaultConstraints(),
+      'Research a PA system and microphones for a 40-person event, including delivery and setup.',
+    );
+    m.contacts[0].phone = '+15555550123';
+    const s = scope(1);
+    const value = executeTool(m, s, 'get_mission_brief', { token: 'server-verified-test-token' });
+    expect(value).toMatchObject({
+      missionTitle: m.title,
+      goal: m.goal,
+      taskKind: 'delivery',
+      taskTitle: m.tasks[1].title,
+      commitmentAllowed: false,
+    });
+    const encoded = JSON.stringify(value);
+    expect(encoded).not.toContain(m.ownerId);
+    expect(encoded).not.toContain(m.contacts[0].phone);
+    expect(value).not.toHaveProperty('responses');
+    expect(value).not.toHaveProperty('contacts');
+    expect(value).not.toHaveProperty('approvals');
+  });
   it('a catering fact changes the venue brief', () => {
     const venue = m.tasks[0];
     expect(brief(m, venue).latestAccessAt).toBeUndefined();
