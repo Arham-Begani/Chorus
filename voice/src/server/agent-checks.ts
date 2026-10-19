@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import { isDeepStrictEqual } from 'node:util';
 import { bolnaTools } from '../providers/bolna-tools';
-import { phoneHangupPrompt, phoneWelcome } from '../providers/phone-profile';
+import { phoneEndpointing, phoneTaskSettings, phoneWelcome } from '../providers/phone-profile';
 import type { SetupCheck } from './setup-checks';
 const agentSchema = z.object({
   agent_welcome_message: z.string().optional(),
@@ -108,18 +108,12 @@ export function agentChecks(
           {
             name: 'phone speech pacing',
             ok:
-              t.task_config.check_if_user_online === false &&
-              Number(t.tools_config.transcriber?.endpointing) >= 350 &&
-              Number(t.tools_config.transcriber?.endpointing) <= 500 &&
-              Number(t.task_config.hangup_after_silence) >= 10 &&
-              Number(t.task_config.hangup_after_silence) <= 20 &&
-              t.task_config.number_of_words_for_interruption === 2 &&
-              t.task_config.incremental_delay === 500 &&
-              t.task_config.hangup_after_LLMCall === true &&
-              t.task_config.interruptible_hangup_message === true &&
-              t.task_config.call_cancellation_prompt === phoneHangupPrompt,
+              t.tools_config.transcriber?.endpointing === phoneEndpointing &&
+              Object.entries(phoneTaskSettings).every(([key, value]) =>
+                isDeepStrictEqual(t.task_config[key], value),
+              ),
             detail:
-              'Use the reviewed phone pacing and completion profile: no presence nag, bounded silence/duration, interruption support and explicit completion criteria.',
+              'Use the exact phone profile: one unmute check before the silence timeout, no LLM silence re-prompts, bounded duration, interruptions and explicit completion criteria.',
           },
         ]
       : []),

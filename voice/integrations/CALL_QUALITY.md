@@ -1,5 +1,7 @@
 # Phone conversation quality
 
+The owner subsequently confirmed that the participant spoke after the 18:30 greeting but received no response. Fresh provider reads still show no recognized speech or model turns. The private recording's non-greeting channel is very faint compared with the earlier answered call; the exact microphone/audio-route/carrier/STT cause remains unproven. Recovery is now configured to play a specific unmute check after eight seconds of no detected reply, with LLM silence repeats disabled. This configuration passed provider readback but still needs a separately authorized live test. Preserve the provider's 09:00–20:00 calling guardrails; do not extend an expired allowance.
+
 Latest approved retest, 19 October 18:30 IST: equipment returned busy; delivery connected for 21 seconds and the carrier reported recipient hangup. Only the one greeting was transcribed, with no recognized user speech or model turns. No brief read or structured quote was collected. The full revised flow therefore remains unverified. The two-attempt allowance is complete; no retry is authorized by this guide. Recordings were present inside carrier metadata, which the evidence importer now handles; their URLs and raw logs remain private.
 
 The 19 October answered rehearsal exposed repeated "Let me check the shared mission brief" audio, unclear purpose/identity and no structured terms. That exact phrase was configured as every tool's pre-call message, including writes. Descriptions also encouraged repeated refreshes. This pass removes those triggers and adds persisted recovery controls. It does not prove the revised speech has been tested live.
@@ -12,7 +14,7 @@ The 19 October answered rehearsal exposed repeated "Let me check the shared miss
 - One actionable correction for invalid arguments/stale terms, then an end instruction after a second failure. Secret, scope and role checks are never softened by recovery.
 - Phone write responses concern the assigned task. Confirmed complete terms can end that call while other tasks remain unfinished.
 - One owner clarification for missing essential details, followed by an end instruction. No callback promise. Quality stops require explicit review/retry before further dispatch.
-- Phone pacing: 450 ms endpointing, 500 ms incremental delay, two-word interruption threshold, no presence nag, 15-second silence timeout and the existing maximum of 180 seconds. Prompt-based completion has explicit decline/completion criteria and an interruptible goodbye.
+- Phone pacing: 450 ms endpointing, 500 ms incremental delay, two-word interruption threshold, an actionable unmute check after eight seconds of no detected reply, no LLM silence re-prompts, 15-second silence timeout and the existing maximum of 180 seconds. The model must not repeat the provider check or restart the welcome. Prompt-based completion has explicit decline/completion criteria and an interruptible goodbye.
 
 The server can refuse more tools and instruct a polite end; it cannot guarantee every model response or instant active-call termination. Provider silence and duration limits remain the backstop. New pacing and prompt-based hangup require live verification.
 

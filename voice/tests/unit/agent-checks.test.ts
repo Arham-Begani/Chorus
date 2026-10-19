@@ -47,7 +47,7 @@ it('rejects repeated spoken filler, outdated descriptions and aggressive pacing'
   changed.tasks[0].tools_config.api_tools.tools[0].pre_call_message =
     'Let me check the shared mission brief.';
   changed.tasks[0].tools_config.transcriber.endpointing = 150;
-  changed.tasks[0].task_config.check_if_user_online = true;
+  changed.tasks[0].task_config.max_silence_repeats = 3;
   const checks = agentChecks(changed, 'phone', env);
   expect(checks.find((c) => c.name === 'phone conversation contract')?.ok).toBe(false);
   expect(checks.find((c) => c.name === 'phone speech pacing')?.ok).toBe(false);
@@ -70,4 +70,23 @@ it('fails closed for incomplete agent contracts and literal tokens', () => {
   expect(agentChecks(changed, 'phone', env).find((c) => c.name === 'phone tool bindings')?.ok).toBe(
     false,
   );
+});
+it('requires an actionable connection check before hangup and forbids repeated silence prompts', () => {
+  expect(phoneTaskSettings.trigger_user_online_message_after).toBeLessThan(
+    phoneTaskSettings.hangup_after_silence,
+  );
+  expect(phoneTaskSettings.max_silence_repeats).toBe(0);
+  expect(phoneTaskSettings.check_user_online_message).toContain('unmuted');
+  for (const override of [
+    { check_if_user_online: false },
+    { max_silence_repeats: 2 },
+    { trigger_user_online_message_after: 20 },
+    { check_user_online_message: 'Are you still there?' },
+  ]) {
+    const changed = fixture();
+    Object.assign(changed.tasks[0].task_config, override);
+    expect(
+      agentChecks(changed, 'phone', env).find((c) => c.name === 'phone speech pacing')?.ok,
+    ).toBe(false);
+  }
 });
