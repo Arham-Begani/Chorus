@@ -2,9 +2,11 @@
 
 ## Conversation quality follow-up
 
+PR #7 merged as **1e70bff0a99c8dcc9c753fcb21d7e5bf27df4e15**. [Linux CI for source 0801d7c passed](https://github.com/Arham-Begani/Chorus/actions/runs/39247655492): **124 tests (78 unit, 22 PostgreSQL integration, 24 desktop/mobile browser)**, typecheck, production build, both Docker builds, actual Compose startup/worker restart with the same attempts/source events, full archive/isolated restore with matching contents and RLS, HTTPS configuration and GitGuardian. Local app/database health returned HTTP 200 and the separate simulation worker logged ready. Two corrected startup runs succeeded and reused identical recorded service identities. Subsequent changes only document the result and retest procedure.
+
 The repeated tool filler and over-frequent refresh instructions were identified in the configured contract. The quality pass removes that filler, supplies native read/fact arguments, persists repeat/error limits and explicit task-specific collection/confirmation/end guidance, deduplicates facts and adds read-only/source-sync checks. Typecheck, 78 unit tests, 22 PostgreSQL tests and the final production build passed. The configured-agent PUT/readback exposed provider-inserted filler when pre_call_message was omitted; explicit empty strings now persist, with a regression for omitted fields. Both configured agents passed exact source prompts, silent schemas/mappings, duration/retry and webhook bindings; the phone also passed pacing/completion checks. A separate read-only audit passed, with provider/voice preservation and unchanged private environment. Signed synthetic route tests persisted two sourced quotes, evaluated the equipment/delivery plan, invalidated it after a budget revision, verified stop state with a fresh database connection and retained secret/scope/role denials. These checks do not use a conversational model, carrier or live participant.
 
-The new provider pacing/completion profile and repeat recovery require a future separately authorized live retest. No new call or browser session was started, no earlier grant was reset, and no successful live structured quote is claimed. Final startup and CI results are recorded below once measured.
+The new provider pacing/completion profile and repeat recovery require a future separately authorized live retest. No new call or browser session was started, no earlier grant was reset, and no successful live structured quote is claimed. Final startup and CI results are recorded above.
 
 ## Two-participant live result and context correction
 

@@ -33,6 +33,8 @@ Unit cases exercise repeated checks, meaningful progress versus duplicate facts,
 
 Before a separately approved retest, brief consenting participants on their equipment/delivery roles and a specific fictional service. Include that service and any public organizer identity in the operator goal. Check:
 
+An illustrative goal is: "Authorized CHORUS product rehearsal, not a booking: research two speakers and two wireless microphones for 40 people at the chosen event date/time, with delivery and installation, under INR8,000." Enter the actual chosen date/time and zone in the mission constraints. In this fictional test the equipment participant can offer INR5,000 including fees, capacity 40 and readiness one hour before the event; delivery can offer INR1,500 including fees, readiness one hour before and 30-minute setup. Let participants answer and correct these details naturally. Expected combined total is INR6,500; a later INR6,000 owner budget must invalidate the plan. These are role-play inputs, not actual provider quotes or authorization to dial.
+
 | Participant action                     | Expected behavior                                                          |
 | -------------------------------------- | -------------------------------------------------------------------------- |
 | Repeats identity/company questions     | Direct answers, no repeated tool filler; unknown organizer admitted.       |
