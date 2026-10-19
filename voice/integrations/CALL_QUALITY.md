@@ -1,5 +1,7 @@
 # Phone conversation quality
 
+Latest approved retest, 19 October 18:30 IST: equipment returned busy; delivery connected for 21 seconds and the carrier reported recipient hangup. Only the one greeting was transcribed, with no recognized user speech or model turns. No brief read or structured quote was collected. The full revised flow therefore remains unverified. The two-attempt allowance is complete; no retry is authorized by this guide. Recordings were present inside carrier metadata, which the evidence importer now handles; their URLs and raw logs remain private.
+
 The 19 October answered rehearsal exposed repeated "Let me check the shared mission brief" audio, unclear purpose/identity and no structured terms. That exact phrase was configured as every tool's pre-call message, including writes. Descriptions also encouraged repeated refreshes. This pass removes those triggers and adds persisted recovery controls. It does not prove the revised speech has been tested live.
 
 ## Controls

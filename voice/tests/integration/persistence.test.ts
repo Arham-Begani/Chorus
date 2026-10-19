@@ -146,7 +146,8 @@ it('duplicate and out-of-order callbacks cannot duplicate actions or regress a t
   await mutate(m.id, owner, (m) =>
     applyExecution(m, a.id, {
       ...payload,
-      recording_url: 'https://recordings.example.test/contract-fixture.wav',
+      recording_url: null,
+      telephony_data: { recording_url: 'https://recordings.example.test/contract-fixture.wav' },
       transcript: 'A completed execution can gain its transcript and recording later.',
     }),
   );
@@ -161,6 +162,7 @@ it('duplicate and out-of-order callbacks cannot duplicate actions or regress a t
       id: a.executionId,
       status: 'completed',
       recording_url: 'http://insecure.example.test/audio',
+      telephony_data: { recording_url: 'javascript:alert(1)' },
     }),
   );
   expect((await getMission(m.id, owner)).attempts[0].recordingUrl).toBe(

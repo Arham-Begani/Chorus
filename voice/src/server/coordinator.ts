@@ -3,7 +3,13 @@ import { event, evaluate, mergeStatus, replan, researchApproved, reserve } from 
 import { pool, mutate } from './db';
 import { config, inCallingWindow } from './config';
 import { livePolicy } from '../core/live-policy';
-import { assertCanDial, BolnaAdapter, DispatchError, executionSchema } from '../providers/bolna';
+import {
+  assertCanDial,
+  BolnaAdapter,
+  DispatchError,
+  executionSchema,
+  executionRecording,
+} from '../providers/bolna';
 import { SimulationAdapter } from '../providers/simulation';
 import { releaseUnusedAllowance, reserveLiveCost } from './live-budget';
 import { randomUUID } from 'node:crypto';
@@ -65,12 +71,9 @@ export function applyExecution(m: Mission, attemptId: string, input: unknown) {
       a.transcript = data.transcript;
       artifactsChanged = true;
     }
-    if (
-      data.recording_url &&
-      /^https:\/\//.test(data.recording_url) &&
-      data.recording_url !== a.recordingUrl
-    ) {
-      a.recordingUrl = data.recording_url;
+    const recording = executionRecording(data);
+    if (recording && recording !== a.recordingUrl) {
+      a.recordingUrl = recording;
       artifactsChanged = true;
     }
   }

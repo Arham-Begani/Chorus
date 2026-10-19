@@ -23,6 +23,25 @@ export const executionSchema = z
     billing_settled: z.boolean().nullish(),
   })
   .passthrough();
+
+export function executionRecording(data: Record<string, unknown>) {
+  const carrier = data.telephony_data;
+  const nested =
+    carrier && typeof carrier === 'object' && !Array.isArray(carrier)
+      ? Reflect.get(carrier, 'recording_url')
+      : undefined;
+  // Hosted Plivo executions return recordings inside telephony_data. Treat both
+  // locations as optional evidence, without rejecting a valid status callback.
+  for (const candidate of [data.recording_url, nested]) {
+    if (typeof candidate !== 'string' || /[\u0000-\u0020]/.test(candidate)) continue;
+    try {
+      const url = new URL(candidate);
+      if (url.protocol === 'https:' && !url.username && !url.password) return candidate;
+    } catch {
+      // A missing or malformed recording must not regress the execution state.
+    }
+  }
+}
 export function assertCanDial(m: Mission, taskId: string) {
   if (!config.realEnabled || readiness().missing.length)
     throw new DispatchError('Live calling is disabled or credentials are incomplete', false);
