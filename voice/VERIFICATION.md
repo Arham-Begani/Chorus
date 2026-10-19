@@ -1,5 +1,11 @@
 # Verification record
 
+## Final merged verification and bounded phone rehearsal
+
+[Linux CI passed for source 8a1d2e5](https://github.com/Arham-Begani/Chorus/actions/runs/39203150889); PR #5 merged as 344378b. **105 tests passed: 62 unit, 19 PostgreSQL integration, 24 desktop/mobile browser.** Typecheck, optimized production build, both Docker builds, actual Compose startup and worker restart preserving the same attempts/source events, full archive/isolated restore with matching contents and RLS, HTTPS validation and GitGuardian passed. The final local readiness-dialog checks passed on desktop/mobile. Subsequent changes are documentation only.
+
+After these app checks, the owner's explicit “then call” instruction triggered one further bounded manual attempt. It was accepted, persisted an execution and rang, then returned `busy` again. The execution reported duration 0, cost 0 and `billing_settled=false`. No brief/tool invocation, observations, offers, transcript or recording resulted. Three auditable rehearsal rows remain: one pre-acceptance HTTP400 rejection (released unused allowance) and two accepted busy calls (INR100 still reserved in total). All missions are paused, the normal simulation worker is restored, web/database health is HTTP 200 and real-call switches remain disabled. No automatic redial occurred. Owned callback tunnel/gateway processes were stopped after the terminal result. No answered conversation or live coordination success is claimed. Historical measurements follow.
+
 ## Follow-up: verified destination and busy outcome
 
 The corrected destination was observed Active in Bolna. One new manually prepared request was accepted, persisted its provider execution, rang and ended `busy`, with zero conversation duration, reported zero cost and billing still pending. No answered conversation or structured report occurred. Both attempts remain auditable and paused; no automatic redial is scheduled. Private execution identifiers and participant details are excluded from this record.
