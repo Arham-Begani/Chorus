@@ -1,5 +1,6 @@
 import 'dotenv/config';
 import { setupChecks } from '../src/server/setup-checks';
+import { agentChecks } from '../src/server/agent-checks';
 const checks = setupChecks(process.env);
 for (const c of checks)
   console.log(`${c.ok ? 'PASS' : 'TODO'} ${c.name}${c.ok ? '' : ': ' + c.detail}`);
@@ -45,12 +46,46 @@ if (process.argv.includes('--online')) {
     }
     for (const role of ['CONDUCTOR', 'PHONE']) {
       const id = process.env[`BOLNA_${role}_AGENT_ID`];
-      if (id && /^[0-9a-f-]{36}$/i.test(id))
-        await probe(
+      if (id && /^[0-9a-f-]{36}$/i.test(id)) {
+        const agent = await probe(
           `Bolna ${role.toLowerCase()} agent`,
           `https://api.bolna.ai/v2/agent/${id}`,
           headers,
         );
+        if (agent)
+          for (const c of agentChecks(
+            agent,
+            role === 'PHONE' ? 'phone' : 'conductor',
+            process.env,
+          )) {
+            console.log(`${c.ok ? 'PASS' : 'TODO'} ${c.name}${c.ok ? '' : ': ' + c.detail}`);
+            failed ||= !c.ok;
+          }
+      }
+    }
+  }
+  if (checks.find((c) => c.name === 'HTTPS callbacks')?.ok) {
+    try {
+      const r = await fetch(
+        `${process.env.CHORUS_CALLBACK_ORIGIN || process.env.APP_ORIGIN}/api/bolna/webhook`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: '{}',
+          signal: AbortSignal.timeout(10000),
+          redirect: 'error',
+        },
+      );
+      const ok = r.status === 401;
+      console.log(
+        `${ok ? 'PASS' : 'TODO'} protected callback reachability: HTTP ${r.status} (expected 401 without a secret).`,
+      );
+      failed ||= !ok;
+    } catch {
+      failed = true;
+      console.log(
+        'TODO protected callback reachability: temporary HTTPS endpoint is unavailable; restart the tunnel and update both agents.',
+      );
     }
   }
 }

@@ -3,6 +3,7 @@ import { brief } from '../core/engine';
 import { config, inCallingWindow, readiness } from '../server/config';
 import { capability } from '../server/auth';
 import type { Attempt, Mission } from '../core/types';
+import { assertLivePolicy } from '../core/live-policy';
 export class DispatchError extends Error {
   constructor(
     message: string,
@@ -17,6 +18,7 @@ export const executionSchema = z
     status: z.string(),
     transcript: z.string().nullish(),
     recording_url: z.string().nullish(),
+    total_cost: z.number().nonnegative().nullish(),
   })
   .passthrough();
 export function assertCanDial(m: Mission, taskId: string) {
@@ -28,6 +30,11 @@ export function assertCanDial(m: Mission, taskId: string) {
       false,
     );
   if (!inCallingWindow()) throw new DispatchError('Outside the authorized calling window', false);
+  try {
+    assertLivePolicy(process.env);
+  } catch (e) {
+    throw new DispatchError((e as Error).message, false);
+  }
   const t = m.tasks.find((t) => t.id === taskId),
     contact = m.contacts.find((c) => c.id === t?.contactId);
   if (
@@ -51,6 +58,7 @@ export class BolnaAdapter {
         headers: { Authorization: `Bearer ${key}`, 'Content-Type': 'application/json' },
         body: body ? JSON.stringify(body) : undefined,
         signal: AbortSignal.timeout(15000),
+        redirect: 'error',
       });
     } catch {
       throw new DispatchError(
@@ -58,11 +66,32 @@ export class BolnaAdapter {
         true,
       );
     }
-    if (!r.ok)
+    if (!r.ok) {
+      let hint = '';
+      try {
+        const data = await r.json();
+        const message =
+          typeof data.message === 'string'
+            ? data.message
+            : typeof data.detail === 'string'
+              ? data.detail
+              : '';
+        // Translate recognized provider failures; never echo arbitrary response text,
+        // which may contain recipient numbers, request data or credentials.
+        if (/verif|trial/i.test(message))
+          hint = ' Verify the test destination in Bolna before trying again.';
+        else if (/balance|credit|wallet/i.test(message))
+          hint = ' Check available Bolna credits before trying again.';
+        else if (/phone|number|caller/i.test(message))
+          hint = ' Check the account default caller number and destination in Bolna.';
+      } catch {
+        /* An unreadable error body still has a definitive HTTP status. */
+      }
       throw new DispatchError(
-        `Bolna returned HTTP ${r.status}`,
+        `Bolna returned HTTP ${r.status}.${hint}`,
         r.status >= 500 || r.status === 408,
       );
+    }
     try {
       return await r.json();
     } catch {
@@ -106,9 +135,20 @@ export class BolnaAdapter {
   async stopPending(id: string) {
     return this.api(`/call/${z.uuid().parse(id)}/stop`, {});
   }
-  async browserSession(m: Mission) {
+  assertBrowserReady(m: Mission) {
     if (!config.realEnabled || readiness().missing.length)
       throw new Error('Live voice requires completed Bolna and Supabase configuration');
+    if (m.mode !== 'real' || m.status === 'paused')
+      throw new Error('Open a real mission and resume it before connecting paid browser voice.');
+    if (process.env.LIVE_AGENT_LIMITS_VERIFIED !== 'true')
+      throw new Error(
+        'Verify conductor duration, disabled retries and cost reserve before connecting paid voice.',
+      );
+    if (!inCallingWindow()) throw new Error('Outside the authorized calling window');
+    assertLivePolicy(process.env);
+  }
+  async browserSession(m: Mission) {
+    this.assertBrowserReady(m);
     return this.api('/web-call/freeswitch-session', {
       agent_id: process.env.BOLNA_CONDUCTOR_AGENT_ID,
       user_data: {

@@ -112,3 +112,12 @@ it('stale commands have a distinct conflict response while expired sessions stil
   );
   expect(requestError(new Error('Sign in required')).status).toBe(401);
 });
+it('live-session budget and expiry failures do not sign the operator out', () => {
+  for (const message of [
+    'A browser voice session is already reserved. Wait before reconnecting.',
+    'Live-test authorization is expired. No paid session can start.',
+    'Verify conductor duration, disabled retries and cost reserve before connecting paid voice.',
+  ])
+    expect(requestError(new Error(message)).status).toBe(400);
+  expect(requestError(new Error('Session expired')).status).toBe(401);
+});

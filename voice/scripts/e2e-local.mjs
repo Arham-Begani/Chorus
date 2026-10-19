@@ -24,6 +24,10 @@ const env = {
   DEMO_PASSWORD: randomBytes(24).toString('hex'),
   BOLNA_API_KEY: '',
   CALL_ALLOWLIST: '',
+  LIVE_TEST_ID: '',
+  LIVE_TEST_START_AT: '',
+  LIVE_TEST_END_AT: '',
+  LIVE_TEST_BUDGET_MINOR: '',
 };
 const children = new Set();
 function start(args) {
@@ -47,7 +51,8 @@ try {
   console.log('Starting temporary simulation test server on loopback port 3002.');
   const web = start(['scripts/start.mjs']);
   let ready = false;
-  for (let i = 0; i < 100; i++) {
+  const startupDeadline = Date.now() + 90000;
+  while (Date.now() < startupDeadline) {
     if (web.exitCode !== null) throw new Error('Test web server exited before readiness.');
     try {
       const response = await fetch(`${env.APP_ORIGIN}/api/health`, {

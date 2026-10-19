@@ -1,6 +1,6 @@
 # Provider capability audit
 
-Reviewed official sources on 2026-10-18. **Documentation verification is separate from live verification. No Bolna call has been placed by this implementation.** Accounts are now configured privately; agent configuration and HTTPS probes have been verified, while browser and phone call execution remain unverified. See the latest VERIFICATION.md section.
+Reviewed official sources on 18–19 October 2026. **Documentation verification is separate from live verification.** One authorized outbound request was rejected before dialing because the Bolna trial destination was unverified. No successful provider conversation or structured tool report has been observed. Accounts, exact agent bindings and protected callbacks were checked privately; browser and phone execution remain unverified. See the latest VERIFICATION.md section.
 
 ## Number-free browser conductor
 
@@ -28,4 +28,4 @@ Implemented independently of paid telephone services: browser SpeechRecognition 
 
 Sources: [documentation index](https://www.bolna.ai/docs/llms.txt), [make call](https://www.bolna.ai/docs/api-reference/calls/make), [functions](https://www.bolna.ai/docs/tool-calling/introduction), [schema](https://www.bolna.ai/docs/tool-calling/custom-function-schema), [callbacks](https://www.bolna.ai/docs/post-call/polling-call-status-webhooks), [execution](https://www.bolna.ai/docs/api-reference/executions/get_execution), [stop call](https://www.bolna.ai/docs/api-reference/calls/stop_call), [official Web Call SDK](https://github.com/bolna-ai/web-call).
 
-Known boundary: a pause received after the worker admits a network request cannot retract that request. It blocks later admission and approvals. Active calls retain read/report tools until expiry, can read paused=true, and may finish politely. No automatic ambiguous-call retry or real-call test has been performed.
+Known boundary: a pause received after the worker admits a network request cannot retract that request. It blocks later admission and approvals. Active calls retain read/report tools until expiry, can read paused=true, and may finish politely. No automatic ambiguous-call retry occurs. Dated authorizations expire; durable phone/browser reserves share one total ceiling across missions and restarts. Provider invoices determine actual charges. Repeated terminal updates can enrich transcript/recording/cost evidence; at most six bounded artifact polls continue without redialing.

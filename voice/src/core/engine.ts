@@ -198,6 +198,7 @@ export function revise(m: Mission, constraints: Constraints, reason: string) {
     if (a.status === 'requested' || a.status === 'approved') a.status = 'stale';
   for (const o of m.offers) o.stale = true;
   for (const t of m.tasks) {
+    delete t.dispatchBlocked;
     t.rounds = t.state === 'active' ? 1 : 0;
     if (t.state !== 'active') {
       t.state = 'pending';
@@ -336,10 +337,10 @@ export function submit(m: Mission, scope: Scope, key: string, revision: number, 
   event(m, 'offer.submitted', terms.description, scope.attemptId);
   evaluate(m);
 }
-export function reserve(m: Mission, t: Task): Attempt {
+export function reserve(m: Mission, t: Task, id = randomUUID()): Attempt {
   const now = new Date().toISOString();
   const a: Attempt = {
-    id: randomUUID(),
+    id,
     taskId: t.id,
     mode: m.mode,
     status: 'dispatching',
@@ -365,16 +366,22 @@ export function replan(m: Mission) {
   )
     return;
   const problems = m.conflicts.filter((c) => c.kind !== 'missing' && c.kind !== 'clarification');
+  const questions = new Map<Task, string[]>();
   for (const c of problems) {
     let t = m.tasks.find((t) => t.id === c.taskId);
     if (c.kind === 'budget')
       t = [...m.tasks]
         .sort((a, b) => (latest(m, b.id)?.priceMinor || 0) - (latest(m, a.id)?.priceMinor || 0))
-        .find((t) => t.rounds < 3);
-    if (t && t.rounds < 3 && (t.state !== 'pending' || t.question !== c.message)) {
+        .find((t) => t.rounds < 3 && !t.dispatchBlocked);
+    if (t && t.rounds < 3 && !t.dispatchBlocked)
+      questions.set(t, [...(questions.get(t) || []), c.message]);
+  }
+  for (const [t, messages] of questions) {
+    const question = [...new Set(messages)].join(' ');
+    if (t.state !== 'pending' || t.question !== question) {
       t.state = 'pending';
-      t.question = c.message;
-      event(m, 'task.replanned', `${t.title}: ${c.message}`);
+      t.question = question;
+      event(m, 'task.replanned', `${t.title}: ${question}`);
     }
   }
   if (m.tasks.every((t) => t.state !== 'pending' && t.state !== 'active') && !m.plan.feasible)
@@ -403,6 +410,7 @@ export function retryTask(m: Mission, taskId: string) {
   for (const offer of m.offers) if (offer.taskId === taskId) offer.stale = true;
   task.state = 'pending';
   task.rounds = 0;
+  delete task.dispatchBlocked;
   task.question =
     'The owner requested fresh research. Reconfirm current terms without making a commitment.';
   m.status = 'running';

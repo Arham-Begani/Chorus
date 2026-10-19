@@ -1,5 +1,15 @@
 # Verification record
 
+## Reliability and attempted live rehearsal — 19 October 2026
+
+Local typecheck, **60 unit tests**, **16 PostgreSQL integration tests** and the optimized production build passed. The full **24 desktop/mobile browser tests** passed before the final readiness-header polish. Its focused rerun exposed inherited live-grant settings in the temporary harness; those are now explicitly cleared. Final focused and Linux CI results follow with the PR. New tests cover serialized cross-mission spending, retained allowances after uncertain minting, one browser lease, dated expiry, late artifacts, low-wallet terminal status, stable blocked rows, multiple conflict questions and live-session errors preserving operator sign-in.
+
+The owner supplied one destination, confirmed consent and delegated a bounded time/spending choice. A dedicated one-shot rehearsal committed its attempt and reserve before one outbound request. **Bolna rejected it with HTTP 400: trial destination verification required.** No execution ID, answered conversation, transcript, observation or structured offer resulted. No automatic retry occurred; the mission was paused and normal calling switches remain disabled. This is observed rejection-path behavior, not outbound success. The private provider OTP step must finish before another explicitly bounded attempt.
+
+Read-only checks confirmed both agents' duration, disabled rescheduling, role tools, current callback URLs, substitution templates and independent secrets. These checks do not prove runtime substitution. Supabase Auth/Bolna account/agent endpoints returned HTTP 200; capacity remains two. The replacement callback tunnel passed dashboard 404, unauthenticated webhook 401 and authenticated unknown-execution 202. No phone, token or private execution payload is included here.
+
+Historical verification follows.
+
 Latest local pass, **19 October 2026**: typecheck, 52 unit tests, 10 real PostgreSQL integration tests, optimized production build and 22 desktop/mobile browser tests passed (84 total). Windows startup restored missing web/worker processes and a repeated invocation reused the same process identities. Live provider executions remain unverified and disabled. The subsequent sections preserve earlier measurements and the submission/recovery changes. Linux archive/restore, image and HTTPS results are recorded by the current GitHub CI run.
 
 [Linux CI passed for source commit 7433531](https://github.com/Arham-Begani/Chorus/actions/runs/39162576978), including the full database archive/isolated restore with matching contents and RLS, 84 tests, production/Docker builds and Caddy/Compose HTTPS validation. Windows startup also restored a deliberately stopped worker. The local workspace was opened in the in-app browser with existing email/password sign-in; no auth settings changed. The six-slide Google pitch was exported to PDF and all slides visually reviewed after repairing missing screenshot media. Public pitch-link permission and final form submission remain owner actions, not completed claims.

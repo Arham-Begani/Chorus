@@ -26,11 +26,10 @@ export const config = {
     return process.env.APP_ORIGIN || 'http://localhost:3000';
   },
   get maxOutbound() {
-    return Math.min(
-      3,
-      Math.max(0, Number(process.env.OUTBOUND_CONCURRENCY || 3)),
-      Math.max(0, Number(process.env.ACCOUNT_CONCURRENCY || 1) - 1),
-    );
+    const outbound = Number(process.env.OUTBOUND_CONCURRENCY || 3),
+      account = Number(process.env.ACCOUNT_CONCURRENCY || 1);
+    if (![outbound, account].every((n) => Number.isSafeInteger(n) && n > 0)) return 0;
+    return Math.min(3, outbound, Math.max(0, account - 1));
   },
   get reserveMinor() {
     return Math.max(1, Number(process.env.CALL_COST_RESERVE_MINOR || 5000));
@@ -65,13 +64,18 @@ export function readiness() {
 }
 export function inCallingWindow(now = new Date()) {
   const zone = process.env.CALLING_TIMEZONE || 'Asia/Kolkata';
-  const time = new Intl.DateTimeFormat('en-GB', {
-    timeZone: zone,
-    hour: '2-digit',
-    minute: '2-digit',
-    hour12: false,
-  }).format(now);
   const start = process.env.CALLING_WINDOW_START || '09:00',
     end = process.env.CALLING_WINDOW_END || '20:00';
-  return start <= end ? time >= start && time <= end : time >= start || time <= end;
+  if (![start, end].every((t) => /^(?:[01]\d|2[0-3]):[0-5]\d$/.test(t))) return false;
+  try {
+    const time = new Intl.DateTimeFormat('en-GB', {
+      timeZone: zone,
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: false,
+    }).format(now);
+    return start <= end ? time >= start && time <= end : time >= start || time <= end;
+  } catch {
+    return false;
+  }
 }

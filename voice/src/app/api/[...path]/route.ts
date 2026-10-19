@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
+import { liveReadiness, mintBrowserSession } from '../../../server/live-budget';
 import { randomUUID } from 'node:crypto';
 import { assertOrigin, equal, sign, supabase, toolScope, user } from '../../../server/auth';
 import { config, readiness } from '../../../server/config';
@@ -132,6 +133,7 @@ async function handle(req: Request, { params }: { params: Promise<{ path: string
     if (p === 'conductor' && req.method === 'POST')
       return json(await conduct(owner, await body(req)));
     if (p === 'session') return json({ authenticated: true, readiness: readiness() });
+    if (p === 'live-readiness' && req.method === 'GET') return json(await liveReadiness());
     if (p === 'logout') {
       const response = json({ ok: true });
       response.cookies.delete('chorus_session');
@@ -179,7 +181,7 @@ async function handle(req: Request, { params }: { params: Promise<{ path: string
       data = await body(req);
     if (action === 'voice') {
       const m = await getMission(id, owner);
-      return json(await new BolnaAdapter().browserSession(m));
+      return json(await mintBrowserSession(m));
     }
     if (action === 'reconcile') {
       const input = z.object({ attemptId: z.uuid(), executionId: z.uuid() }).strict().parse(data);
