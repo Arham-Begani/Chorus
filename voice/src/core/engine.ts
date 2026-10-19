@@ -264,7 +264,11 @@ export function brief(m: Mission, t: Task) {
   const setupMins = setup ? latest(m, setup.id)?.setupMinutes : undefined;
   return {
     missionId: m.id,
+    missionTitle: m.title,
+    goal: m.goal,
     taskId: t.id,
+    taskKind: t.kind,
+    taskTitle: t.title,
     revision: m.revision,
     paused: m.status === 'paused',
     constraints: m.constraints,

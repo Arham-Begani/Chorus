@@ -1,6 +1,6 @@
 # Chorus
 
-**CHORUS voice mission control:** [open the application project](voice/README.md) or [submission guide](voice/SUBMISSION.md). Speak or type an event goal, coordinate simulated vendor research, revise constraints and review a sourced plan. The responsive application, separate worker, PostgreSQL persistence and deployment files live in `voice/`. Answered Bolna conversations and live coordination remain unverified; real calling is disabled by default.
+**CHORUS voice mission control:** [open the application project](voice/README.md) or [submission guide](voice/SUBMISSION.md). Speak or type an event goal, coordinate simulated vendor research, revise constraints and review a sourced plan. The responsive application, separate worker, PostgreSQL persistence and deployment files live in `voice/`. One answered Bolna call and scoped brief retrieval are verified; structured live coordination remains unverified. Real calling is disabled by default.
 
 ## Earlier Midnight project
 
