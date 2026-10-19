@@ -24,8 +24,12 @@
         "x-chorus-tool-secret": "REPLACE_WITH_BOLNA_TOOL_SECRET"
       },
       "param": {
-        "token": "%(chorus_token)s",
-        "payload_json": "%(payload_json)s"
+        "token": {
+          "$var": "chorus_token"
+        },
+        "payload_json": {
+          "$var": "payload_json"
+        }
       }
     }
   },
@@ -54,8 +58,12 @@
         "x-chorus-tool-secret": "REPLACE_WITH_BOLNA_TOOL_SECRET"
       },
       "param": {
-        "token": "%(chorus_token)s",
-        "payload_json": "%(payload_json)s"
+        "token": {
+          "$var": "chorus_token"
+        },
+        "payload_json": {
+          "$var": "payload_json"
+        }
       }
     }
   },
@@ -84,8 +92,12 @@
         "x-chorus-tool-secret": "REPLACE_WITH_BOLNA_TOOL_SECRET"
       },
       "param": {
-        "token": "%(chorus_token)s",
-        "payload_json": "%(payload_json)s"
+        "token": {
+          "$var": "chorus_token"
+        },
+        "payload_json": {
+          "$var": "payload_json"
+        }
       }
     }
   },
@@ -114,8 +126,12 @@
         "x-chorus-tool-secret": "REPLACE_WITH_BOLNA_TOOL_SECRET"
       },
       "param": {
-        "token": "%(chorus_token)s",
-        "payload_json": "%(payload_json)s"
+        "token": {
+          "$var": "chorus_token"
+        },
+        "payload_json": {
+          "$var": "payload_json"
+        }
       }
     }
   },
@@ -144,8 +160,12 @@
         "x-chorus-tool-secret": "REPLACE_WITH_BOLNA_TOOL_SECRET"
       },
       "param": {
-        "token": "%(chorus_token)s",
-        "payload_json": "%(payload_json)s"
+        "token": {
+          "$var": "chorus_token"
+        },
+        "payload_json": {
+          "$var": "payload_json"
+        }
       }
     }
   }

@@ -64,7 +64,7 @@ describe('phone conversation recovery contracts (no model or calls)', () => {
     expect(tools.every((t) => t.pre_call_message === '')).toBe(true);
     const read = tools.find((t) => t.name === 'get_mission_brief')!;
     expect(read.parameters.required).toEqual([]);
-    expect(read.value.param).toEqual({ token: '%(chorus_token)s' });
+    expect(read.value.param).toEqual({ token: { $var: 'chorus_token' } });
     const { invoke } = call();
     expect(invoke('get_mission_brief')).toMatchObject({
       taskKind: 'delivery',

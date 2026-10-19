@@ -17,7 +17,9 @@
         "x-chorus-tool-secret": "REPLACE_WITH_BOLNA_TOOL_SECRET"
       },
       "param": {
-        "token": "%(chorus_token)s"
+        "token": {
+          "$var": "chorus_token"
+        }
       }
     }
   },
@@ -51,26 +53,68 @@
         "x-chorus-tool-secret": "REPLACE_WITH_BOLNA_TOOL_SECRET"
       },
       "param": {
-        "token": "%(chorus_token)s",
-        "key": "%(key)s",
-        "text": "%(text)s"
+        "token": {
+          "$var": "chorus_token"
+        },
+        "key": {
+          "$var": "key"
+        },
+        "text": {
+          "$var": "text"
+        }
       }
     }
   },
   {
     "name": "submit_offer",
-    "description": "Save the participant’s actual quote after refreshing the brief. JSON fields: key,revision,terms with priceMinor integer paise,currency INR,description,confirmation reported or confirmed,optional capacity integer,readyAt ISO with offset,setupMinutes integer. Generate key yourself. INR 5500 is 550000 paise. Never invent missing terms.",
+    "description": "Save the actual quote after refreshing the brief, using named fields rather than JSON text. price_inr is rupees, not paise. Send supplied relevant details only. Omitted optional details retain this call’s current quote; an empty string retracts a detail. Confirm only after explicit agreement. Never invent unknown terms or ask for irrelevant fields.",
     "pre_call_message": "",
     "parameters": {
       "type": "object",
       "properties": {
-        "payload_json": {
+        "key": {
           "type": "string",
-          "description": "Save the participant’s actual quote after refreshing the brief. JSON fields: key,revision,terms with priceMinor integer paise,currency INR,description,confirmation reported or confirmed,optional capacity integer,readyAt ISO with offset,setupMinutes integer. Generate key yourself. INR 5500 is 550000 paise. Never invent missing terms. Encode the object as JSON; never include a token."
+          "description": "Generate a new operation ID whenever terms or confirmation change. Reuse an ID only for an identical retry."
+        },
+        "revision": {
+          "type": "integer",
+          "description": "Current revision from the latest get_mission_brief result."
+        },
+        "price_inr": {
+          "type": "string",
+          "description": "Actual total in INR rupees, e.g. 1500.50. Do not multiply by 100. Never use zero for unknown."
+        },
+        "description": {
+          "type": "string",
+          "description": "The specific goods/service covered by this actual quote, including the fee/tax agreement."
+        },
+        "confirmation": {
+          "type": "string",
+          "enum": [
+            "reported",
+            "confirmed"
+          ],
+          "description": "Use confirmed only after the participant explicitly agrees to the quote summary."
+        },
+        "capacity": {
+          "type": "string",
+          "description": "Capacity/quantity as whole digits only if relevant and supplied. Omit if unknown; empty string retracts a previously supplied value. Do not ask delivery about capacity."
+        },
+        "ready_at": {
+          "type": "string",
+          "description": "Exact readiness/access ISO datetime with timezone offset, using the brief date and zone. Omit if not supplied; empty string retracts a previous time."
+        },
+        "setup_minutes": {
+          "type": "string",
+          "description": "Actual setup/installation duration in whole minutes if relevant. Zero means explicitly no setup time. Omit if unknown; empty string retracts a previous duration."
         }
       },
       "required": [
-        "payload_json"
+        "key",
+        "revision",
+        "price_inr",
+        "description",
+        "confirmation"
       ]
     },
     "key": "custom_task",
@@ -82,8 +126,33 @@
         "x-chorus-tool-secret": "REPLACE_WITH_BOLNA_TOOL_SECRET"
       },
       "param": {
-        "token": "%(chorus_token)s",
-        "payload_json": "%(payload_json)s"
+        "token": {
+          "$var": "chorus_token"
+        },
+        "key": {
+          "$var": "key"
+        },
+        "revision": {
+          "$var": "revision"
+        },
+        "price_inr": {
+          "$var": "price_inr"
+        },
+        "description": {
+          "$var": "description"
+        },
+        "confirmation": {
+          "$var": "confirmation"
+        },
+        "capacity": {
+          "$var": "capacity"
+        },
+        "ready_at": {
+          "$var": "ready_at"
+        },
+        "setup_minutes": {
+          "$var": "setup_minutes"
+        }
       }
     }
   },
@@ -117,9 +186,15 @@
         "x-chorus-tool-secret": "REPLACE_WITH_BOLNA_TOOL_SECRET"
       },
       "param": {
-        "token": "%(chorus_token)s",
-        "key": "%(key)s",
-        "text": "%(text)s"
+        "token": {
+          "$var": "chorus_token"
+        },
+        "key": {
+          "$var": "key"
+        },
+        "text": {
+          "$var": "text"
+        }
       }
     }
   }

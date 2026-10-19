@@ -23,7 +23,7 @@ const fixture = () => ({
           ),
           tools_params: Object.fromEntries(
             bolnaTools('phone', env.CHORUS_CALLBACK_ORIGIN, env.BOLNA_TOOL_SECRET).map(
-              ({ name, value }) => [name, { ...value, param: JSON.stringify(value.param) }],
+              ({ name, value }) => [name, { ...value, param: value.param }],
             ),
           ),
         },
@@ -63,13 +63,33 @@ it('rejects repeated spoken filler, outdated descriptions and aggressive pacing'
 it('fails closed for incomplete agent contracts and literal tokens', () => {
   expect(agentChecks({}, 'phone', env)[0].ok).toBe(false);
   const changed = fixture();
-  changed.tasks[0].tools_config.api_tools.tools_params.submit_offer.param = JSON.stringify({
+  Reflect.set(changed.tasks[0].tools_config.api_tools.tools_params.submit_offer, 'param', {
     token: 'literal-token',
     payload_json: '%(payload_json)s',
   });
   expect(agentChecks(changed, 'phone', env).find((c) => c.name === 'phone tool bindings')?.ok).toBe(
     false,
   );
+});
+it('rejects serialized variable markers and makes unrelated quote fields optional', () => {
+  const changed = fixture();
+  const params = changed.tasks[0].tools_config.api_tools.tools_params.submit_offer;
+  Reflect.set(params, 'param', JSON.stringify(params.param));
+  expect(agentChecks(changed, 'phone', env).find((c) => c.name === 'phone tool bindings')?.ok).toBe(
+    false,
+  );
+  const tool = bolnaTools('phone', env.CHORUS_CALLBACK_ORIGIN, env.BOLNA_TOOL_SECRET).find(
+    (t) => t.name === 'submit_offer',
+  )!;
+  expect(tool.parameters.required).not.toContain('capacity');
+  expect(tool.parameters.required).not.toContain('setup_minutes');
+  expect(tool.parameters.properties).not.toHaveProperty('payload_json');
+  tool.parameters.properties.price_inr.type = 'number';
+  expect(
+    bolnaTools('phone', env.CHORUS_CALLBACK_ORIGIN, env.BOLNA_TOOL_SECRET).find(
+      (t) => t.name === 'submit_offer',
+    )!.parameters.properties.price_inr.type,
+  ).toBe('string');
 });
 it('requires an actionable connection check before hangup and forbids repeated silence prompts', () => {
   expect(phoneTaskSettings.trigger_user_online_message_after).toBeLessThan(

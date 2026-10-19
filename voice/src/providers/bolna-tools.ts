@@ -1,3 +1,5 @@
+import { phoneQuoteProperties, phoneQuoteRequired } from '../core/phone-quote';
+
 export const roleToolNames = {
   conductor: [
     'propose_mission',
@@ -18,7 +20,7 @@ const instructions: Record<string, string> = {
   report_observation:
     'Save one new relevant business fact from this call. Generate a stable key yourself; never ask the participant for tool arguments. Do not record greetings or repeat an already saved fact.',
   submit_offer:
-    'Save the participant’s actual quote after refreshing the brief. JSON fields: key,revision,terms with priceMinor integer paise,currency INR,description,confirmation reported or confirmed,optional capacity integer,readyAt ISO with offset,setupMinutes integer. Generate key yourself. INR 5500 is 550000 paise. Never invent missing terms.',
+    'Save the actual quote after refreshing the brief, using named fields rather than JSON text. price_inr is rupees, not paise. Send supplied relevant details only. Omitted optional details retain this call’s current quote; an empty string retracts a detail. Confirm only after explicit agreement. Never invent unknown terms or ask for irrelevant fields.',
   request_clarification:
     'Record a missing essential organizer/service detail or callback request for the mission owner, then end politely. This does not arrange a callback. Generate a stable key yourself; never ask the participant for tool arguments.',
   request_approval:
@@ -28,7 +30,7 @@ const instructions: Record<string, string> = {
   initiate_approved_work:
     'Queue research after the owner approved the current revision. JSON fields: key. Never purchases or reserves.',
 };
-type Property = { type: string; description: string };
+type Property = { type: string; description: string; enum?: string[] };
 
 export function bolnaTools(role: BolnaRole, origin: string, secret: string) {
   return roleToolNames[role].map((name) => {
@@ -37,7 +39,7 @@ export function bolnaTools(role: BolnaRole, origin: string, secret: string) {
         ? 'Read the owner’s current mission before discussing feasibility, revising constraints or starting work. Reuse it for greetings and identity questions. JSON object: {}.'
         : instructions[name];
     let properties: Record<string, Property> = {};
-    const param: Record<string, string> = { token: '%(chorus_token)s' };
+    const param: Record<string, { $var: string }> = { token: { $var: 'chorus_token' } };
     if (role === 'phone' && name === 'get_mission_brief') {
       // No model-generated argument is needed to read an already scoped brief.
     } else if (
@@ -51,14 +53,17 @@ export function bolnaTools(role: BolnaRole, origin: string, secret: string) {
         },
         text: { type: 'string', description: 'The new business fact or essential missing detail.' },
       };
-      param.key = '%(key)s';
-      param.text = '%(text)s';
+      param.key = { $var: 'key' };
+      param.text = { $var: 'text' };
+    } else if (role === 'phone' && name === 'submit_offer') {
+      properties = structuredClone(phoneQuoteProperties);
+      for (const field of Object.keys(properties)) param[field] = { $var: field };
     } else {
       properties.payload_json = {
         type: 'string',
         description: description + ' Encode the object as JSON; never include a token.',
       };
-      param.payload_json = '%(payload_json)s';
+      param.payload_json = { $var: 'payload_json' };
     }
     return {
       name,
@@ -69,7 +74,10 @@ export function bolnaTools(role: BolnaRole, origin: string, secret: string) {
       parameters: {
         type: 'object',
         properties,
-        required: Object.keys(properties),
+        required:
+          role === 'phone' && name === 'submit_offer'
+            ? [...phoneQuoteRequired]
+            : Object.keys(properties),
       },
       key: 'custom_task',
       value: {

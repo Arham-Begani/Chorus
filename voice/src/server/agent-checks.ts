@@ -54,19 +54,15 @@ export function agentChecks(
   const tools =
     names.every((name) => {
       const p = api.tools_params[name];
-      let param: Record<string, unknown>;
-      try {
-        param = typeof p?.param === 'string' ? JSON.parse(p.param) : p?.param;
-      } catch {
-        return false;
-      }
       return (
         api.tools.some((tool) => tool.name === name) &&
         p?.url === `${origin}/api/tools/${name}` &&
         p.method === 'POST' &&
         !!env.BOLNA_TOOL_SECRET &&
         p.headers['x-chorus-tool-secret'] === env.BOLNA_TOOL_SECRET &&
-        isDeepStrictEqual(param, expected.find((tool) => tool.name === name)!.value.param)
+        typeof p.param === 'object' &&
+        !Array.isArray(p.param) &&
+        isDeepStrictEqual(p.param, expected.find((tool) => tool.name === name)!.value.param)
       );
     }) &&
     api.tools.length === names.length &&
@@ -85,7 +81,7 @@ export function agentChecks(
       name: `${role} tool bindings`,
       ok: tools,
       detail:
-        'Tool names, POST endpoints, shared-secret headers and runtime token templates must exactly match the current private configuration.',
+        'Tool names, POST endpoints, independent headers and structured JSON variable mappings must exactly match the current private configuration. Serialized marker strings are not supported.',
     },
     {
       name: `${role} conversation contract`,
