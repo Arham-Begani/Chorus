@@ -1,17 +1,19 @@
 [
   {
     "name": "propose_mission",
-    "description": "Draft the current mission from the owner’s spoken goal. JSON fields: key,title,goal,constraints with budgetMinor,currency INR,quantity,eventStart ISO with offset,timezone.",
-    "pre_call_message": "Let me check the shared mission brief.",
+    "description": "Draft the owner’s mission. JSON fields: key,title,goal,constraints with budgetMinor,currency INR,quantity,eventStart ISO with offset,timezone.",
+    "pre_call_message": "",
     "parameters": {
       "type": "object",
       "properties": {
         "payload_json": {
           "type": "string",
-          "description": "Draft the current mission from the owner’s spoken goal. JSON fields: key,title,goal,constraints with budgetMinor,currency INR,quantity,eventStart ISO with offset,timezone. Encode the object as JSON; do not include a token."
+          "description": "Draft the owner’s mission. JSON fields: key,title,goal,constraints with budgetMinor,currency INR,quantity,eventStart ISO with offset,timezone. Encode the object as JSON; never include a token."
         }
       },
-      "required": ["payload_json"]
+      "required": [
+        "payload_json"
+      ]
     },
     "key": "custom_task",
     "value": {
@@ -29,17 +31,19 @@
   },
   {
     "name": "get_mission_brief",
-    "description": "Refresh the current brief and shared evidence before every material question or proposal. JSON object: {}.",
-    "pre_call_message": "Let me check the shared mission brief.",
+    "description": "Read the owner’s current mission before discussing feasibility, revising constraints or starting work. Reuse it for greetings and identity questions. JSON object: {}.",
+    "pre_call_message": "",
     "parameters": {
       "type": "object",
       "properties": {
         "payload_json": {
           "type": "string",
-          "description": "Refresh the current brief and shared evidence before every material question or proposal. JSON object: {}. Encode the object as JSON; do not include a token."
+          "description": "Read the owner’s current mission before discussing feasibility, revising constraints or starting work. Reuse it for greetings and identity questions. JSON object: {}. Encode the object as JSON; never include a token."
         }
       },
-      "required": ["payload_json"]
+      "required": [
+        "payload_json"
+      ]
     },
     "key": "custom_task",
     "value": {
@@ -58,16 +62,18 @@
   {
     "name": "request_approval",
     "description": "Ask the owner to use an authenticated approval card. JSON fields: key,kind research or plan. This does not approve anything.",
-    "pre_call_message": "Let me check the shared mission brief.",
+    "pre_call_message": "",
     "parameters": {
       "type": "object",
       "properties": {
         "payload_json": {
           "type": "string",
-          "description": "Ask the owner to use an authenticated approval card. JSON fields: key,kind research or plan. This does not approve anything. Encode the object as JSON; do not include a token."
+          "description": "Ask the owner to use an authenticated approval card. JSON fields: key,kind research or plan. This does not approve anything. Encode the object as JSON; never include a token."
         }
       },
-      "required": ["payload_json"]
+      "required": [
+        "payload_json"
+      ]
     },
     "key": "custom_task",
     "value": {
@@ -85,17 +91,19 @@
   },
   {
     "name": "update_mission_constraints",
-    "description": "Revise constraints only at the authenticated browser owner’s request. JSON fields: key,reason,constraints with all five fields budgetMinor,currency INR,quantity,eventStart ISO,timezone.",
-    "pre_call_message": "Let me check the shared mission brief.",
+    "description": "Revise only at the browser owner’s request. JSON fields: key,reason,constraints with budgetMinor,currency INR,quantity,eventStart ISO with offset,timezone.",
+    "pre_call_message": "",
     "parameters": {
       "type": "object",
       "properties": {
         "payload_json": {
           "type": "string",
-          "description": "Revise constraints only at the authenticated browser owner’s request. JSON fields: key,reason,constraints with all five fields budgetMinor,currency INR,quantity,eventStart ISO,timezone. Encode the object as JSON; do not include a token."
+          "description": "Revise only at the browser owner’s request. JSON fields: key,reason,constraints with budgetMinor,currency INR,quantity,eventStart ISO with offset,timezone. Encode the object as JSON; never include a token."
         }
       },
-      "required": ["payload_json"]
+      "required": [
+        "payload_json"
+      ]
     },
     "key": "custom_task",
     "value": {
@@ -113,17 +121,19 @@
   },
   {
     "name": "initiate_approved_work",
-    "description": "Queue research only after the owner already approved the current revision. JSON fields: key. Never makes a purchase or reservation.",
-    "pre_call_message": "Let me check the shared mission brief.",
+    "description": "Queue research after the owner approved the current revision. JSON fields: key. Never purchases or reserves.",
+    "pre_call_message": "",
     "parameters": {
       "type": "object",
       "properties": {
         "payload_json": {
           "type": "string",
-          "description": "Queue research only after the owner already approved the current revision. JSON fields: key. Never makes a purchase or reservation. Encode the object as JSON; do not include a token."
+          "description": "Queue research after the owner approved the current revision. JSON fields: key. Never purchases or reserves. Encode the object as JSON; never include a token."
         }
       },
-      "required": ["payload_json"]
+      "required": [
+        "payload_json"
+      ]
     },
     "key": "custom_task",
     "value": {

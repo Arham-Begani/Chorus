@@ -2,7 +2,7 @@
 
 One spoken goal, several coordinated conversations, one accountable plan. This application is self-contained in `voice/`. The existing Midnight project elsewhere in this repository is preserved.
 
-**Delivery mode: working browser conductor and coordinated simulation; real-call setup prepared.** Speak or type goals and revisions without a phone number. Operator sign-in uses email/password when Supabase is configured. No Bolna browser conversation, outbound phone call, provider concurrency test or spoken live telephone revision has been performed. Live calling stays disabled by default. See [CAPABILITIES.md](CAPABILITIES.md) and [VERIFICATION.md](VERIFICATION.md).
+**Delivery mode: working browser conductor and coordinated simulation, with limited live phone proof.** Speak or type goals and revisions without a phone number. Operator sign-in uses email/password when Supabase is configured. One answered 100-second phone call, transcript and scoped brief retrieval were verified; structured live quote collection, paid browser voice and coordinated live revisions remain unverified. Calling stays disabled by default. See [CAPABILITIES.md](CAPABILITIES.md) and [VERIFICATION.md](VERIFICATION.md).
 
 ## Run locally
 
@@ -71,6 +71,8 @@ The integration suite launches and stops its own worker to prove recovery across
 Production web runs with `npm start`; production worker with `node --import tsx worker/index.ts`. Runtime environment can supply secrets without an `.env` file. Docker web/worker/migration targets, private PostgreSQL and CI are included. Read [DEPLOYMENT.md](DEPLOYMENT.md) before deployment.
 
 ## Live integration
+
+The [call-quality guide](integrations/CALL_QUALITY.md) documents silent tools, remembered facts, bounded repeat/error recovery and the reviewed speech profile. `npm run bolna:sync` audits both existing agents without dialing; `npm run bolna:sync -- --apply` applies and reads back source prompts/tools/pacing while preserving providers and calling switches. Configuration checks and synthetic tool-route tests are not live conversation-quality proof.
 
 For an account-backed test without permanent hosting, start with [the local live-test guide](integrations/LOCAL_LIVE_TEST.md). The phone icon in the workspace opens optional **Call readiness**, showing pending setup and the total test allowance without exposing numbers or credentials. Simulation remains available throughout. `npm run doctor` reports missing setup without printing credentials; `npm run doctor -- --online` also checks Supabase/Bolna reachability, both agents' actual duration/retry/tool/webhook bindings, account capacity and unauthenticated callback rejection. This probe never dials or changes configuration; it does not prove runtime tool substitution.
 

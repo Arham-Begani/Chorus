@@ -1,14 +1,21 @@
 import { z } from 'zod';
+import { isDeepStrictEqual } from 'node:util';
+import { bolnaTools } from '../providers/bolna-tools';
+import { phoneHangupPrompt, phoneWelcome } from '../providers/phone-profile';
 import type { SetupCheck } from './setup-checks';
 const agentSchema = z.object({
+  agent_welcome_message: z.string().optional(),
   webhook_url: z.string().optional(),
   webhook_headers: z.record(z.string(), z.unknown()).nullish(),
   tasks: z.array(
     z.object({
-      task_config: z.object({ call_terminate: z.number(), auto_reschedule: z.boolean() }),
+      task_config: z
+        .object({ call_terminate: z.number(), auto_reschedule: z.boolean() })
+        .passthrough(),
       tools_config: z.object({
+        transcriber: z.object({ endpointing: z.number().optional() }).passthrough().optional(),
         api_tools: z.object({
-          tools: z.array(z.object({ name: z.string() })),
+          tools: z.array(z.object({ name: z.string() }).passthrough()),
           tools_params: z.record(
             z.string(),
             z.object({
@@ -41,17 +48,9 @@ export function agentChecks(
   const a = parsed.data,
     t = a.tasks[0],
     api = t.tools_config.api_tools;
-  const names =
-    role === 'phone'
-      ? ['get_mission_brief', 'report_observation', 'submit_offer', 'request_clarification']
-      : [
-          'propose_mission',
-          'get_mission_brief',
-          'request_approval',
-          'update_mission_constraints',
-          'initiate_approved_work',
-        ];
   const origin = env.CHORUS_CALLBACK_ORIGIN || env.APP_ORIGIN;
+  const expected = bolnaTools(role, origin || '', env.BOLNA_TOOL_SECRET || '');
+  const names = expected.map((tool) => tool.name);
   const tools =
     names.every((name) => {
       const p = api.tools_params[name];
@@ -67,8 +66,7 @@ export function agentChecks(
         p.method === 'POST' &&
         !!env.BOLNA_TOOL_SECRET &&
         p.headers['x-chorus-tool-secret'] === env.BOLNA_TOOL_SECRET &&
-        param?.token === '%(chorus_token)s' &&
-        param?.payload_json === '%(payload_json)s'
+        isDeepStrictEqual(param, expected.find((tool) => tool.name === name)!.value.param)
       );
     }) &&
     api.tools.length === names.length &&
@@ -89,6 +87,42 @@ export function agentChecks(
       detail:
         'Tool names, POST endpoints, shared-secret headers and runtime token templates must exactly match the current private configuration.',
     },
+    {
+      name: `${role} conversation contract`,
+      ok:
+        (role !== 'phone' || a.agent_welcome_message === phoneWelcome) &&
+        expected.every((definition) => {
+          const tool = api.tools.find((tool) => tool.name === definition.name);
+          const filler = tool?.pre_call_message;
+          return (
+            tool?.description === definition.description &&
+            isDeepStrictEqual(tool.parameters, definition.parameters) &&
+            filler === ''
+          );
+        }),
+      detail:
+        'Tool descriptions and argument schemas must match the source; repeated spoken pre-tool filler is disabled.',
+    },
+    ...(role === 'phone'
+      ? [
+          {
+            name: 'phone speech pacing',
+            ok:
+              t.task_config.check_if_user_online === false &&
+              Number(t.tools_config.transcriber?.endpointing) >= 350 &&
+              Number(t.tools_config.transcriber?.endpointing) <= 500 &&
+              Number(t.task_config.hangup_after_silence) >= 10 &&
+              Number(t.task_config.hangup_after_silence) <= 20 &&
+              t.task_config.number_of_words_for_interruption === 2 &&
+              t.task_config.incremental_delay === 500 &&
+              t.task_config.hangup_after_LLMCall === true &&
+              t.task_config.interruptible_hangup_message === true &&
+              t.task_config.call_cancellation_prompt === phoneHangupPrompt,
+            detail:
+              'Use the reviewed phone pacing and completion profile: no presence nag, bounded silence/duration, interruption support and explicit completion criteria.',
+          },
+        ]
+      : []),
     {
       name: `${role} webhook binding`,
       ok:

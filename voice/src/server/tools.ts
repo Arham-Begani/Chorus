@@ -1,7 +1,6 @@
 import { z } from 'zod';
 import {
   assertScope,
-  brief,
   refreshBrief,
   event,
   evaluate,
@@ -13,6 +12,14 @@ import {
 } from '../core/engine';
 import { constraintsSchema, termsSchema, type Mission, type Scope } from '../core/types';
 import { publicMission } from './db';
+import { phoneConversation, phoneProgressKey } from '../core/phone-conversation';
+const phoneAllowed = [
+  'get_mission_brief',
+  'report_observation',
+  'submit_offer',
+  'request_clarification',
+];
+const normalized = (text: string) => text.trim().replace(/\s+/g, ' ').toLowerCase();
 const toolInput = z
   .object({
     token: z.string().max(10000),
@@ -29,34 +36,70 @@ const toolInput = z
   .strict();
 export function executeTool(m: Mission, scope: Scope, name: string, input: unknown) {
   assertScope(m, scope);
-  const data = toolInput.parse(input);
-  const task = m.tasks.find((t) => t.id === scope.taskId);
-  if (name === 'get_mission_brief')
-    return scope.role === 'phone'
-      ? refreshBrief(m, task!, m.attempts.find((a) => a.id === scope.attemptId)!)
-      : publicMission(m);
-  const phoneAllowed = ['report_observation', 'submit_offer', 'request_clarification'];
   if (scope.role === 'phone' && !phoneAllowed.includes(name))
     throw new Error('This phone agent cannot change constraints, approvals or permissions');
+  const task = m.tasks.find((t) => t.id === scope.taskId);
+  const attempt = m.attempts.find((a) => a.id === scope.attemptId);
+  if (scope.role === 'phone' && attempt?.phoneEndReason)
+    return { ok: false, conversation: phoneConversation(m, task!, attempt) };
+  const data = toolInput.parse(input);
+  if (name === 'get_mission_brief') {
+    if (scope.role !== 'phone') return publicMission(m);
+    const a = attempt!;
+    const progress = phoneProgressKey(m, task!);
+    a.unchangedBriefReads = a.phoneProgressKey === progress ? (a.unchangedBriefReads || 0) + 1 : 1;
+    a.phoneProgressKey = progress;
+    a.briefReadCount = (a.briefReadCount || 0) + 1;
+    if (a.unchangedBriefReads >= 4) {
+      a.phoneEndReason = 'repeated-brief-reads';
+      event(
+        m,
+        'call.conversation-stopped',
+        'Repeated unchanged brief reads reached the conversation limit. The phone agent was instructed to end politely.',
+        a.id,
+      );
+    }
+    return { ...refreshBrief(m, task!, a), conversation: phoneConversation(m, task!, a) };
+  }
   const key = z.string().min(1).parse(data.key);
   const dedup = `${scope.attemptId || 'conductor'}:${name}:${key}`;
-  if (m.processedKeys.includes(dedup)) return { duplicate: true, revision: m.revision };
+  if (m.processedKeys.includes(dedup))
+    return {
+      duplicate: true,
+      revision: m.revision,
+      ...(attempt && task ? { conversation: phoneConversation(m, task, attempt) } : {}),
+    };
   switch (name) {
-    case 'report_observation':
-      report(m, scope, key, z.string().min(1).parse(data.text));
+    case 'report_observation': {
+      const text = z.string().min(1).parse(data.text);
+      if (
+        m.observations.some(
+          (o) => o.attemptId === scope.attemptId && normalized(o.text) === normalized(text),
+        )
+      ) {
+        m.processedKeys.push(dedup);
+        return {
+          duplicate: true,
+          revision: m.revision,
+          ...(attempt && task ? { conversation: phoneConversation(m, task, attempt) } : {}),
+        };
+      }
+      report(m, scope, key, text);
       break;
+    }
     case 'submit_offer':
       submit(m, scope, key, z.number().int().parse(data.revision), data.terms);
       break;
     case 'request_clarification': {
       const text = z.string().min(1).parse(data.text);
       m.conflicts.push({
-        id: `clarification:${key}`,
+        id: `clarification:${scope.attemptId || 'conductor'}:${key}`,
         kind: 'clarification',
         taskId: task?.id,
         message: text,
       });
       event(m, 'clarification.requested', text, scope.attemptId);
+      if (attempt) attempt.phoneEndReason = 'owner-clarification';
       break;
     }
     case 'propose_mission':
@@ -88,6 +131,14 @@ export function executeTool(m: Mission, scope: Scope, name: string, input: unkno
       throw new Error('Unknown tool');
   }
   m.processedKeys.push(dedup);
+  if (scope.role === 'phone') {
+    attempt!.phoneToolFailures = 0;
+    return {
+      ok: true,
+      revision: m.revision,
+      conversation: phoneConversation(m, task!, attempt!),
+    };
+  }
   return {
     ok: true,
     revision: m.revision,
@@ -95,4 +146,72 @@ export function executeTool(m: Mission, scope: Scope, name: string, input: unkno
     plan: m.plan,
     conflicts: m.conflicts,
   };
+}
+
+// Provider tool errors need one actionable repair path, not another opaque check.
+// Scope/role violations stay outside this recovery path and retain HTTP errors.
+export function executeToolRequest(m: Mission, scope: Scope, name: string, raw: unknown) {
+  assertScope(m, scope);
+  if (scope.role === 'phone' && !phoneAllowed.includes(name))
+    throw new Error('This phone agent cannot change constraints, approvals or permissions');
+  if (scope.role === 'phone') {
+    const a = m.attempts.find((a) => a.id === scope.attemptId)!;
+    if (a.phoneEndReason)
+      return {
+        ok: false,
+        conversation: phoneConversation(m, m.tasks.find((t) => t.id === scope.taskId)!, a),
+      };
+  }
+  try {
+    const envelope = z.record(z.string(), z.unknown()).parse(raw);
+    const input =
+      envelope.payload_json === undefined
+        ? envelope
+        : {
+            ...z
+              .record(z.string(), z.unknown())
+              .parse(JSON.parse(z.string().max(16000).parse(envelope.payload_json))),
+            token: envelope.token,
+          };
+    return executeTool(m, scope, name, input);
+  } catch (error) {
+    const stale = error instanceof Error && /^(Stale revision|Brief changed)/.test(error.message);
+    if (
+      scope.role !== 'phone' ||
+      !(error instanceof z.ZodError || error instanceof SyntaxError || stale)
+    )
+      throw error;
+    const a = m.attempts.find((a) => a.id === scope.attemptId)!;
+    const t = m.tasks.find((t) => t.id === scope.taskId)!;
+    a.phoneToolFailures = (a.phoneToolFailures || 0) + 1;
+    if (a.phoneToolFailures >= 2) a.phoneEndReason = 'repeated-tool-errors';
+    event(
+      m,
+      'call.tool-rejected',
+      stale
+        ? 'Phone terms used an outdated brief; refresh once before correcting the offer.'
+        : 'Phone tool arguments were invalid; one correction is allowed before a polite stop.',
+      a.id,
+    );
+    const conversation = phoneConversation(m, t, a);
+    return {
+      ok: false,
+      error: {
+        code: stale ? 'refresh_required' : 'invalid_arguments',
+        message: stale
+          ? 'Refresh get_mission_brief once and use its current revision before resubmitting actual terms.'
+          : 'Use the documented tool arguments. Correct the format once without asking the participant to repeat facts or supply JSON.',
+      },
+      conversation:
+        conversation.action === 'end'
+          ? conversation
+          : {
+              ...conversation,
+              phase: 'repair',
+              instruction: stale
+                ? 'Refresh the brief once, then correct the offer silently using its current revision and the participant’s existing answers.'
+                : 'Correct the tool format once using the existing answers. Do not ask another business question, restart the introduction or ask the participant to repair JSON.',
+            },
+    };
+  }
 }

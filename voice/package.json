@@ -21,6 +21,7 @@
     "setup": "tsx scripts/setup.ts",
     "bolna:tools": "tsx scripts/generate-tools.ts",
     "bolna:tools:private": "tsx --env-file=.env scripts/generate-tools.ts --private",
+    "bolna:sync": "tsx --env-file=.env scripts/sync-bolna-agents.ts",
     "callbacks": "tsx --env-file=.env scripts/callback-gateway.ts",
     "doctor": "tsx --env-file=.env scripts/doctor.ts",
     "format": "prettier --write ."
