@@ -1,5 +1,11 @@
 # Session handoff — 2026-10-19
 
+## Latest phone outcome and reconciliation follow-up
+
+The corrected destination became Active in Bolna after private owner verification. A single manually prepared request using the same dated authorization was accepted, persisted an execution and rang, then returned `busy`: zero conversation duration, reported zero cost, `billing_settled=false`. No observations/offers/transcript/recording were produced. The mission was paused and no automatic redial occurred. An async question asks whether the participant can answer one next call after checks. Do not call until that availability answer arrives. The prepared third-attempt flag checks the recorded busy execution and corrected destination; it must not be used for any further automatic repeat.
+
+Branch `fix/call-outcome-reconciliation` builds on main 12901ef. It adds migration 004 to preserve original reservation rows while recording an audited release only for explicit pre-acceptance HTTP rejection or provider-finalized zero-duration/zero-cost billing. Unknown, provisional and ambiguous outcomes remain reserved. Duration/cost evidence cannot decrease from an old conflicting terminal update. Busy/no-answer/cancellation/low-credit reasons now appear accurately in the task brief, graph and real-call caption, with duration, USD provider cost and pending billing. The initial HTTP400 allowance was released using its persisted rejection proof; the busy allowance stays reserved. Same grant/INR100 cap, no deletion, no new grant, no paid resource purchased. Counts and final CI are recorded after the follow-up check.
+
 ## Final checkpoint
 
 PR #4 merged as **88155a0ef87206b903eff920c6d915a1a9ce666b** after [Linux CI](https://github.com/Arham-Begani/Chorus/actions/runs/39201696662) passed for source **a6f043a7d3d2655f2a2c3652020bfb72bf4db04e**. All **100 tests** (60 unit, 16 PostgreSQL integration, 24 desktop/mobile), production build, both Docker builds, running Compose stack/worker recovery, full archive/isolated restore including the RLS reservation ledger, HTTPS checks and GitGuardian passed. The final focused readiness-dialog checks passed on desktop and mobile. Web/DB health is HTTP 200 and the normal simulation worker is running; runtime identities are recorded privately by start-local.ps1. No new email-auth setup is needed.

@@ -148,9 +148,10 @@ export default function CallReadiness() {
             </p>
           )}
           <p className="readiness-note">
-            Every paid attempt reserves its worst-case allowance before contacting Bolna. Reserves
-            remain after failed or interrupted requests; provider invoices determine actual charges.
-            This panel does not place a call.
+            Every paid attempt reserves its worst-case allowance before contacting Bolna. Uncertain
+            requests keep their reserve. Explicit pre-call rejections and finalized zero-cost
+            outcomes release unused allowance with an audit record; provider invoices determine
+            actual charges. This panel does not place a call.
           </p>
         </>
       )}

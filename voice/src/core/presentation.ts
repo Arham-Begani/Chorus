@@ -1,4 +1,18 @@
-import { type Mission, activeStatuses } from './types';
+import { type Attempt, type Mission, activeStatuses } from './types';
+export function callOutcome(a: Attempt) {
+  return (
+    (
+      {
+        busy: 'Line busy',
+        'no-answer': 'No answer',
+        'balance-low': 'Credits needed',
+        canceled: 'Canceled',
+        cancelled: 'Canceled',
+        stopped: 'Stopped',
+      } as Record<string, string>
+    )[a.providerStatus || ''] || a.status
+  );
+}
 export function formatMoney(value: number) {
   return new Intl.NumberFormat('en-IN', {
     style: 'currency',

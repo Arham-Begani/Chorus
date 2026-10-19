@@ -1,5 +1,11 @@
 # Verification record
 
+## Follow-up: verified destination and busy outcome
+
+The corrected destination was observed Active in Bolna. One new manually prepared request was accepted, persisted its provider execution, rang and ended `busy`, with zero conversation duration, reported zero cost and billing still pending. No answered conversation or structured report occurred. Both attempts remain auditable and paused; no automatic redial is scheduled. Private execution identifiers and participant details are excluded from this record.
+
+The follow-up preserves reservations for uncertain dispatch and provisional billing, while allowing audited release of explicit pre-acceptance rejection and provider-finalized zero-cost/zero-duration results. Existing rows and release reasons remain in the archive. Stale conflicting terminal data cannot zero out a paid call. Local typecheck, 62 unit tests, 19 PostgreSQL integration tests and production build passed; final browser/CI results are recorded with the follow-up PR. This is a billing/failed-call recovery improvement, not successful live research proof.
+
 Final result: [Linux CI for source a6f043a passed](https://github.com/Arham-Begani/Chorus/actions/runs/39201696662), and PR #4 merged as 88155a0. **100 tests passed: 60 unit, 16 PostgreSQL integration, 24 desktop/mobile browser.** Production and both container builds, actual Compose web/worker/migration/PostgreSQL startup and restart recovery, isolated full archive/restore including all four private RLS tables, HTTPS configuration and GitGuardian passed. The final local readiness-header check also passed on desktop and mobile after clearing the temporary harness's inherited grant settings. The local app/database health returned HTTP 200 and its separate simulation worker was restored. A rejected outbound request is still the only provider dispatch result; no live conversation or tool report is claimed.
 
 ## Reliability and attempted live rehearsal — 19 October 2026

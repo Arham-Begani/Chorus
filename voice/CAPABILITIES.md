@@ -1,6 +1,6 @@
 # Provider capability audit
 
-Reviewed official sources on 18–19 October 2026. **Documentation verification is separate from live verification.** One authorized outbound request was rejected before dialing because the Bolna trial destination was unverified. No successful provider conversation or structured tool report has been observed. Accounts, exact agent bindings and protected callbacks were checked privately; browser and phone execution remain unverified. See the latest VERIFICATION.md section.
+Reviewed official sources on 18–19 October 2026. **Documentation verification is separate from live verification.** The first request was rejected before acceptance. After the corrected destination became Active in Bolna, one new request was accepted, persisted an execution, rang and ended `busy`, with zero conversation duration and reported zero cost but billing still pending. No answered conversation or structured tool report has been observed. No automatic redial is scheduled. Accounts, exact agent bindings and protected callbacks were checked privately; paid browser conversation and live research remain unverified. See VERIFICATION.md.
 
 ## Number-free browser conductor
 

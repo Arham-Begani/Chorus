@@ -337,7 +337,7 @@ export function submit(m: Mission, scope: Scope, key: string, revision: number, 
   event(m, 'offer.submitted', terms.description, scope.attemptId);
   evaluate(m);
 }
-export function reserve(m: Mission, t: Task, id = randomUUID()): Attempt {
+export function reserve(m: Mission, t: Task, id: string = randomUUID()): Attempt {
   const now = new Date().toISOString();
   const a: Attempt = {
     id,
