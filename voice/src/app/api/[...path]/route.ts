@@ -1,6 +1,10 @@
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
-import { liveReadiness, mintBrowserSession } from '../../../server/live-budget';
+import {
+  liveReadiness,
+  mintBrowserSession,
+  releaseUnusedAllowance,
+} from '../../../server/live-budget';
 import { randomUUID } from 'node:crypto';
 import { assertOrigin, equal, sign, supabase, toolScope, user } from '../../../server/auth';
 import { config, readiness } from '../../../server/config';
@@ -126,7 +130,10 @@ async function handle(req: Request, { params }: { params: Promise<{ path: string
         );
       const m = rows.rows[0].state as Mission;
       const a = m.attempts.find((a) => a.executionId === executionId)!;
-      await mutate(m.id, undefined, (m) => applyExecution(m, a.id, input));
+      await mutate(m.id, undefined, async (m, client) => {
+        applyExecution(m, a.id, input);
+        await releaseUnusedAllowance(client, m, m.attempts.find((x) => x.id === a.id)!);
+      });
       return json({ accepted: true });
     }
     const owner = await user(req);

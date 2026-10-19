@@ -90,6 +90,8 @@ export interface Attempt {
   artifactNextPollAt?: string;
   providerStatus?: string;
   providerCostCents?: number;
+  providerDurationSeconds?: number;
+  providerBillingSettled?: boolean;
 }
 export interface Observation {
   id: string;

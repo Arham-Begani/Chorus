@@ -9,10 +9,45 @@ import {
   evaluate,
   reserve,
 } from '../../src/core/engine';
-import { exportBrief, missionGuidance, formatMoney } from '../../src/core/presentation';
+import {
+  callOutcome,
+  exportBrief,
+  missionGuidance,
+  formatMoney,
+} from '../../src/core/presentation';
+import { applyExecution } from '../../src/server/coordinator';
 import { requestError } from '../../src/server/request-error';
 const base = { ...defaultConstraints(), eventStart: '2030-05-02T18:00:00+05:30' },
   now = new Date('2030-05-01T10:00:00Z');
+it('distinguishes participant busy/no-answer outcomes from software failures', () => {
+  const m = createMission('owner', 'equipment', 'real', base);
+  const a = reserve(m, m.tasks[0]);
+  a.status = 'failed';
+  a.providerStatus = 'busy';
+  expect(callOutcome(a)).toBe('Line busy');
+  a.providerStatus = 'no-answer';
+  expect(callOutcome(a)).toBe('No answer');
+  a.providerStatus = 'balance-low';
+  expect(callOutcome(a)).toBe('Credits needed');
+});
+it('late conflicting terminal callbacks cannot zero out a completed paid execution', () => {
+  const m = createMission('owner', 'equipment', 'real', base);
+  const a = reserve(m, m.tasks[0]);
+  a.status = 'completed';
+  a.executionId = '123e4567-e89b-42d3-a456-426614174000';
+  a.providerCostCents = 10;
+  a.providerDurationSeconds = 60;
+  applyExecution(m, a.id, {
+    id: a.executionId,
+    status: 'busy',
+    total_cost: 0,
+    conversation_duration: 0,
+    billing_settled: true,
+  });
+  expect(a.providerCostCents).toBe(10);
+  expect(a.providerDurationSeconds).toBe(60);
+  expect(a.providerBillingSettled).toBeUndefined();
+});
 it('quote display preserves paise without adding noise to whole-rupee quotes', () => {
   expect(formatMoney(185501)).toBe('₹1,855.01');
   expect(formatMoney(900000)).toBe('₹9,000');

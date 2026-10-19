@@ -37,7 +37,12 @@ import ConductorPanel from './conductor-panel';
 import CallReadiness from './call-readiness';
 import { Brand } from './brand';
 import { ApiError, requestJSON as api } from '../client/api';
-import { exportBrief, missionGuidance, formatMoney as money } from '../core/presentation';
+import {
+  callOutcome,
+  exportBrief,
+  missionGuidance,
+  formatMoney as money,
+} from '../core/presentation';
 type Ready = {
   realEnabled: boolean;
   missing: string[];
@@ -99,7 +104,7 @@ function MissionGraph({ m }: { m: Mission }) {
         data: {
           kind: t.kind,
           label: m.contacts.find((c) => c.id === t.contactId)?.name || t.title,
-          state: a?.status || 'awaiting approval',
+          state: a ? callOutcome(a) : 'awaiting approval',
           detail: o
             ? `${money(o.priceMinor)} · ${o.confirmation}`
             : t.kind.charAt(0).toUpperCase() + t.kind.slice(1),
@@ -1072,6 +1077,16 @@ export default function MissionControl() {
                                 <ArrowUpRight size={15} />
                               </button>
                             </div>
+                            {a?.mode === 'real' && a.providerStatus && (
+                              <p className="caption">
+                                {callOutcome(a)}
+                                {a.providerDurationSeconds !== undefined &&
+                                  ` · ${a.providerDurationSeconds}s`}
+                                {a.providerCostCents !== undefined &&
+                                  ` · provider cost $${(a.providerCostCents / 100).toFixed(2)} USD`}
+                                {!a.providerBillingSettled && ' · billing pending'}
+                              </p>
+                            )}
                             {t.state === 'blocked' && (
                               <button
                                 className="secondary"

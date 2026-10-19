@@ -19,6 +19,8 @@ export const executionSchema = z
     transcript: z.string().nullish(),
     recording_url: z.string().nullish(),
     total_cost: z.number().nonnegative().nullish(),
+    conversation_duration: z.number().nonnegative().nullish(),
+    billing_settled: z.boolean().nullish(),
   })
   .passthrough();
 export function assertCanDial(m: Mission, taskId: string) {

@@ -1,8 +1,13 @@
 import { afterAll, afterEach, beforeEach, expect, it, vi } from 'vitest';
 import { randomUUID } from 'node:crypto';
 import { createMission, defaultConstraints } from '../../src/core/fixtures';
-import { insert, pool } from '../../src/server/db';
-import { mintBrowserSession, reserveLiveCost } from '../../src/server/live-budget';
+import { insert, mutate, getMission, pool } from '../../src/server/db';
+import {
+  mintBrowserSession,
+  releaseUnusedAllowance,
+  reserveLiveCost,
+} from '../../src/server/live-budget';
+import { reserve as reserveAttempt } from '../../src/core/engine';
 import { BolnaAdapter } from '../../src/providers/bolna';
 const owner = `live-budget-${randomUUID()}`;
 const grants: string[] = [];
@@ -33,12 +38,14 @@ afterAll(async () => {
   await pool.query('DELETE FROM chorus_missions WHERE owner_id=$1', [owner]);
   await pool.end();
 });
-async function reserve(kind: 'phone' | 'browser', mission = randomUUID()) {
+async function reserve(kind: 'phone' | 'browser', mission: string = randomUUID()) {
   const c = await pool.connect();
+  const id = randomUUID();
   try {
     await c.query('BEGIN');
-    await reserveLiveCost(c, mission, randomUUID(), kind);
+    await reserveLiveCost(c, mission, id, kind);
     await c.query('COMMIT');
+    return id;
   } catch (e) {
     await c.query('ROLLBACK');
     throw e;
@@ -58,6 +65,79 @@ it('serializes concurrent reservations across missions and shares one total budg
     ).rows[0].n,
   ).toBe(6000);
   await expect(reserve('phone')).rejects.toThrow('total authorized test budget');
+});
+it('releases an explicit pre-acceptance rejection exactly once and retains its audit row', async () => {
+  const m = createMission(owner, 'equipment', 'real', defaultConstraints());
+  const id = await reserve('phone', m.id);
+  const a = reserveAttempt(m, m.tasks[0], id);
+  a.status = 'failed';
+  a.error = 'Bolna returned HTTP 400. Verify the test destination in Bolna before trying again.';
+  m.callReservedMinor = 6000;
+  await insert(m);
+  for (let i = 0; i < 2; i++)
+    await mutate(m.id, owner, async (snapshot, c) =>
+      releaseUnusedAllowance(c, snapshot, snapshot.attempts[0]),
+    );
+  const after = await getMission(m.id, owner);
+  expect(after.callReservedMinor).toBe(0);
+  expect(after.events.filter((e) => e.type === 'call.allowance-released')).toHaveLength(1);
+  expect(
+    (
+      await pool.query(
+        'SELECT reserve_minor,release_reason FROM chorus_live_reservations WHERE id=$1',
+        [id],
+      )
+    ).rows,
+  ).toEqual([{ reserve_minor: 6000, release_reason: 'rejected-before-acceptance' }]);
+  await reserve('phone');
+});
+it('keeps provisional zero costs and uncertain dispatches reserved until billing is final', async () => {
+  const m = createMission(owner, 'equipment', 'real', defaultConstraints());
+  const id = await reserve('phone', m.id);
+  const a = reserveAttempt(m, m.tasks[0], id);
+  a.status = 'uncertain';
+  await insert(m);
+  await mutate(m.id, owner, async (snapshot, c) =>
+    releaseUnusedAllowance(c, snapshot, snapshot.attempts[0]),
+  );
+  await mutate(m.id, owner, async (snapshot, c) => {
+    const a = snapshot.attempts[0];
+    a.status = 'failed';
+    a.executionId = randomUUID();
+    a.providerStatus = 'busy';
+    a.providerCostCents = 0;
+    a.providerDurationSeconds = 0;
+    a.providerBillingSettled = false;
+    await releaseUnusedAllowance(c, snapshot, a);
+  });
+  expect(
+    (await pool.query('SELECT released_at FROM chorus_live_reservations WHERE id=$1', [id])).rows[0]
+      .released_at,
+  ).toBeNull();
+  await mutate(m.id, owner, async (snapshot, c) => {
+    snapshot.attempts[0].providerBillingSettled = true;
+    await releaseUnusedAllowance(c, snapshot, snapshot.attempts[0]);
+  });
+  expect(
+    (await pool.query('SELECT release_reason FROM chorus_live_reservations WHERE id=$1', [id]))
+      .rows[0].release_reason,
+  ).toBe('finalized-zero-cost');
+});
+it('releases a rejected browser mint while retaining uncertain mints', async () => {
+  const m = createMission(owner, 'equipment', 'real', defaultConstraints());
+  await insert(m);
+  const request = vi
+    .fn()
+    .mockResolvedValueOnce(
+      Response.json({ message: 'Trial destination verification required' }, { status: 400 }),
+    )
+    .mockResolvedValueOnce(Response.json({ testSession: true }));
+  const provider = new BolnaAdapter(request);
+  vi.spyOn(provider, 'assertBrowserReady').mockImplementation(() => {});
+  vi.stubEnv('BOLNA_API_KEY', 'contract-test-only');
+  await expect(mintBrowserSession(m, provider)).rejects.toMatchObject({ uncertain: false });
+  await expect(mintBrowserSession(m, provider)).resolves.toEqual({ testSession: true });
+  expect(request).toHaveBeenCalledTimes(2);
 });
 it('reserves one browser line across tabs even when there is enough money', async () => {
   vi.stubEnv('LIVE_TEST_BUDGET_MINOR', '100000');

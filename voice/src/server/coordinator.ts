@@ -5,7 +5,7 @@ import { config, inCallingWindow } from './config';
 import { livePolicy } from '../core/live-policy';
 import { assertCanDial, BolnaAdapter, DispatchError, executionSchema } from '../providers/bolna';
 import { SimulationAdapter } from '../providers/simulation';
-import { reserveLiveCost } from './live-budget';
+import { releaseUnusedAllowance, reserveLiveCost } from './live-budget';
 import { randomUUID } from 'node:crypto';
 const simulation = new SimulationAdapter();
 export function applyExecution(m: Mission, attemptId: string, input: unknown) {
@@ -41,8 +41,23 @@ export function applyExecution(m: Mission, attemptId: string, input: unknown) {
   let artifactsChanged = false;
   // Transcripts/recordings can be attached after the first terminal callback.
   // Deduplicate the actual state change, rather than discarding every repeated status.
-  if (terminal && ['completed', 'failed'].includes(status)) {
-    if (data.total_cost != null && data.total_cost !== a.providerCostCents) {
+  if (terminal && status === a.status) {
+    if (
+      data.conversation_duration != null &&
+      (a.providerDurationSeconds === undefined ||
+        data.conversation_duration > a.providerDurationSeconds)
+    ) {
+      a.providerDurationSeconds = data.conversation_duration;
+      artifactsChanged = true;
+    }
+    if (data.billing_settled === true && !a.providerBillingSettled) {
+      a.providerBillingSettled = true;
+      artifactsChanged = true;
+    }
+    if (
+      data.total_cost != null &&
+      (a.providerCostCents === undefined || data.total_cost > a.providerCostCents)
+    ) {
       a.providerCostCents = data.total_cost;
       artifactsChanged = true;
     }
@@ -73,9 +88,22 @@ export function applyExecution(m: Mission, attemptId: string, input: unknown) {
         : 'blocked';
     if (t.state === 'blocked')
       t.question =
-        data.status === 'balance-low'
-          ? 'Bolna could not place this call because the provider wallet is low. Review credits before an explicit retry.'
-          : 'Call ended without current structured terms. Review evidence and explicitly retry if appropriate.';
+        (
+          {
+            busy: 'The participant’s line was busy. Confirm they are available before explicitly authorizing another attempt.',
+            'no-answer':
+              'The participant did not answer. Arrange a suitable time before explicitly authorizing another attempt.',
+            'balance-low':
+              'Bolna could not place this call because the provider wallet is low. Review credits before an explicit retry.',
+            canceled:
+              'The provider call was canceled before a conversation. No automatic retry is scheduled.',
+            cancelled:
+              'The provider call was canceled before a conversation. No automatic retry is scheduled.',
+            stopped:
+              'The provider call was stopped. Review its evidence before explicitly retrying.',
+          } as Record<string, string>
+        )[data.status] ||
+        'Call ended without current structured terms. Review evidence and explicitly retry if appropriate.';
   }
   if (a.transcript && a.recordingUrl) delete a.artifactNextPollAt;
   event(
@@ -202,7 +230,7 @@ export async function coordinateTick(provider = new BolnaAdapter()) {
             event(m, 'call.queued', 'Bolna accepted the outbound call.', a.id);
           });
         } catch (e) {
-          await mutate(missionId, undefined, (m) => {
+          await mutate(missionId, undefined, async (m, client) => {
             const a = m.attempts.find((a) => a.id === attempt.id)!;
             a.status = e instanceof DispatchError && !e.uncertain ? 'failed' : 'uncertain';
             a.error = (e as Error).message;
@@ -213,6 +241,7 @@ export async function coordinateTick(provider = new BolnaAdapter()) {
               t.question = a.error;
             }
             event(m, `call.${a.status}`, a.error!, a.id);
+            await releaseUnusedAllowance(client, m, a);
           });
         }
       }),
@@ -246,7 +275,10 @@ export async function coordinateTick(provider = new BolnaAdapter()) {
           const data = await provider.execution(a.executionId!);
           if (['scheduled', 'rescheduled'].includes(data.status))
             await provider.stopPending(a.executionId!);
-          await mutate(id, undefined, (m) => applyExecution(m, a.id, data));
+          await mutate(id, undefined, async (m, client) => {
+            applyExecution(m, a.id, data);
+            await releaseUnusedAllowance(client, m, m.attempts.find((x) => x.id === a.id)!);
+          });
         } catch {
           /* Persisted call remains eligible for later polling; never dispatch it again. */
         }
