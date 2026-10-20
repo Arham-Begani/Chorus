@@ -2,6 +2,8 @@
 
 **CHORUS voice mission control:** [open the application project](voice/README.md) or [submission guide](voice/SUBMISSION.md). Speak or type an event goal, coordinate simulated vendor research, revise constraints and review a sourced plan. The responsive application, separate worker, PostgreSQL persistence and deployment files live in `voice/`. One answered Bolna call and scoped brief retrieval are verified; structured live coordination remains unverified. Real calling is disabled by default.
 
+**Start in `voice/`:** [setup](voice/README.md) · [three-minute demo](voice/DEMO.md) · [architecture](voice/ARCHITECTURE.md) · [verified results](voice/VERIFICATION.md). [Latest verified CI](https://github.com/Arham-Begani/Chorus/actions/runs/39308735655) passed150 tests, both container builds, worker recovery and database restore. The submission guide states the live-test limits and final owner steps.
+
 ## Earlier Midnight project
 
 The separate Midnight project documented below is preserved. Its wallet, token and contract instructions are unrelated to the voice application.
@@ -63,11 +65,11 @@ npm run test --workspace @chorus/contract    # 11/11
 
 ### Documentation
 
-| Document | What is in it |
-|---|---|
-| [SETUP.md](SETUP.md) | Prerequisites, both run paths, verification, troubleshooting, known limitations |
-| [idea.md](idea.md) | The concept: the problem, the insight, and why this needs Midnight specifically |
-| This README | The engineering log — verified versions, toolchain drift, circuit metrics, what broke and why |
+| Document             | What is in it                                                                                 |
+| -------------------- | --------------------------------------------------------------------------------------------- |
+| [SETUP.md](SETUP.md) | Prerequisites, both run paths, verification, troubleshooting, known limitations               |
+| [idea.md](idea.md)   | The concept: the problem, the insight, and why this needs Midnight specifically               |
+| This README          | The engineering log — verified versions, toolchain drift, circuit metrics, what broke and why |
 
 ---
 
@@ -78,29 +80,29 @@ and the actual artifacts disagree, both are recorded — that drift is real and 
 
 ### Host
 
-| Component | Version | Notes |
-|---|---|---|
-| OS | Windows 10 Pro 19045.6466 | |
-| WSL | 2.7.11.0 (kernel 6.18.33.2-2) | |
-| Distro | Ubuntu 24.04.4 LTS (x86_64) | All Midnight tooling runs here |
+| Component | Version                       | Notes                          |
+| --------- | ----------------------------- | ------------------------------ |
+| OS        | Windows 10 Pro 19045.6466     |                                |
+| WSL       | 2.7.11.0 (kernel 6.18.33.2-2) |                                |
+| Distro    | Ubuntu 24.04.4 LTS (x86_64)   | All Midnight tooling runs here |
 
-**Windows cannot run this toolchain natively.** The docs state *"Development is supported on
+**Windows cannot run this toolchain natively.** The docs state _"Development is supported on
 Linux and Mac. Windows is not supported natively at this time, if you are using Windows,
-development through WSL is recommended."* Confirmed independently: the `compact` v0.5.1
+development through WSL is recommended."_ Confirmed independently: the `compact` v0.5.1
 release publishes only `{x86_64,aarch64}-apple-darwin` and `{x86_64,aarch64}-unknown-linux-musl`.
 There is no Windows build.
 
 ### Toolchain (inside WSL)
 
-| Component | Version |
-|---|---|
-| Node.js | v24.19.0 |
-| npm | 11.17.0 |
-| `compact` (toolchain manager) | 0.5.1 |
-| `compactc` (compiler) | 0.31.1 |
-| `pragma language_version` | 0.23 |
-| Docker Engine | 29.7.2 |
-| Docker Compose | v5.3.1 |
+| Component                     | Version  |
+| ----------------------------- | -------- |
+| Node.js                       | v24.19.0 |
+| npm                           | 11.17.0  |
+| `compact` (toolchain manager) | 0.5.1    |
+| `compactc` (compiler)         | 0.31.1   |
+| `pragma language_version`     | 0.23     |
+| Docker Engine                 | 29.7.2   |
+| Docker Compose                | v5.3.1   |
 
 `compact` and `compactc` are **separate version numbers**. Compiler `0.31.1` compiles
 `pragma language_version 0.23` — verified with a throwaway probe contract before trusting
@@ -121,9 +123,9 @@ compact update          # installs the compiler; without this, `compact compile`
 
 ### Proof server
 
-| Source | Image tag |
-|---|---|
-| Docs install page | `midnightntwrk/proof-server:8.1.0` |
+| Source                                          | Image tag                              |
+| ----------------------------------------------- | -------------------------------------- |
+| Docs install page                               | `midnightntwrk/proof-server:8.1.0`     |
 | **Scaffold `proof-server.yml` (actually used)** | **`midnightntwrk/proof-server:8.0.3`** |
 
 The example launches its own proof server via testcontainers on a random host port, so
@@ -158,35 +160,35 @@ cd bboard-ui  && npm install && npm run build && cd ..
 
 Midnight SDK versions pinned by the template:
 
-| Package | Version |
-|---|---|
-| `@midnight-ntwrk/midnight-js-*` | 4.1.1 |
-| `@midnight-ntwrk/wallet-sdk` | 1.2.0 |
-| `@midnight-ntwrk/dapp-connector-api` | 4.0.1 |
-| `@midnight-ntwrk/testkit-js` | 4.1.1 |
+| Package                              | Version |
+| ------------------------------------ | ------- |
+| `@midnight-ntwrk/midnight-js-*`      | 4.1.1   |
+| `@midnight-ntwrk/wallet-sdk`         | 1.2.0   |
+| `@midnight-ntwrk/dapp-connector-api` | 4.0.1   |
+| `@midnight-ntwrk/testkit-js`         | 4.1.1   |
 
 ## Verification status
 
 All checks run against the built workspace:
 
-| Package | typecheck | lint | tests |
-|---|---|---|---|
-| `contract` | ✅ | ✅ | ✅ **9/9 passed** (vitest) |
-| `api` | ✅ | ✅ | — |
-| `bboard-cli` | ✅ | ✅ | — |
-| `bboard-ui` | ✅ | ✅ | — |
+| Package      | typecheck | lint | tests                      |
+| ------------ | --------- | ---- | -------------------------- |
+| `contract`   | ✅        | ✅   | ✅ **9/9 passed** (vitest) |
+| `api`        | ✅        | ✅   | —                          |
+| `bboard-cli` | ✅        | ✅   | —                          |
+| `bboard-ui`  | ✅        | ✅   | —                          |
 
 `npm run compact` → `Compiling 2 circuits:` exit 0. The two circuits with proving keys are
 `post` and `takeDown`; `publicKey` is a pure circuit and emits no keys.
 
 ## Networks
 
-| Endpoint | Preview | PreProd |
-|---|---|---|
-| RPC node `/health` | 200 | 200 |
-| Indexer `/ready` | 200 | 200 |
-| Faucet `/api/health` | 200 (was **503** for hours) | 200 |
-| Chain height | ~472,136 | ~2,156,124 |
+| Endpoint             | Preview                     | PreProd    |
+| -------------------- | --------------------------- | ---------- |
+| RPC node `/health`   | 200                         | 200        |
+| Indexer `/ready`     | 200                         | 200        |
+| Faucet `/api/health` | 200 (was **503** for hours) | 200        |
+| Chain height         | ~472,136                    | ~2,156,124 |
 
 Preview's faucet returned **503** for an extended period. This blocks everything, because
 the testkit health-checks the faucet at startup and aborts with
@@ -197,13 +199,13 @@ Switching networks is one word: `npm run preview-remote` vs `npm run preprod-rem
 
 ### PreProd endpoints
 
-| | |
-|---|---|
-| Network ID | `preprod` |
-| Indexer | `https://indexer.preprod.midnight.network/api/v4/graphql` |
-| RPC node | `https://rpc.preprod.midnight.network` |
-| Faucet | `https://midnight-tmnight-preprod.nethermind.dev/` |
-| Proof server | testcontainer, random host port |
+|              |                                                           |
+| ------------ | --------------------------------------------------------- |
+| Network ID   | `preprod`                                                 |
+| Indexer      | `https://indexer.preprod.midnight.network/api/v4/graphql` |
+| RPC node     | `https://rpc.preprod.midnight.network`                    |
+| Faucet       | `https://midnight-tmnight-preprod.nethermind.dev/`        |
+| Proof server | testcontainer, random host port                           |
 
 ## Funding
 
@@ -243,11 +245,11 @@ const isFacadeStateSynced = (state) =>
 
 Measured rates on PreProd (~2.16M blocks):
 
-| wallet | items | rate | time |
-|---|---|---|---|
-| unshielded | 563,587 | instant | seconds |
-| shielded | 1,441,741 | ~3,100/s | ~8 min |
-| **dust** | **1,441,980** | **~60–104/s** | **~3.5–6 hr** |
+| wallet     | items         | rate          | time          |
+| ---------- | ------------- | ------------- | ------------- |
+| unshielded | 563,587       | instant       | seconds       |
+| shielded   | 1,441,741     | ~3,100/s      | ~8 min        |
+| **dust**   | **1,441,980** | **~60–104/s** | **~3.5–6 hr** |
 
 The dust wallet syncs roughly **30× slower** than shielded and is the entire bottleneck.
 It is **not skippable** — `generateDust()` opens with `await walletFacade.dust.waitForSyncedState()`,
@@ -272,8 +274,8 @@ DEBUG_LEVEL=debug npm run preprod-remote
 Note the three wallets use **different progress field names**, which makes naive logging
 misleading:
 
-* unshielded → `appliedId` / `highestTransactionId`
-* shielded and dust → `appliedIndex` / `highestRelevantWalletIndex`
+- unshielded → `appliedId` / `highestTransactionId`
+- shielded and dust → `appliedIndex` / `highestRelevantWalletIndex`
 
 ### Local patches (CLI harness only — contract untouched)
 
@@ -281,7 +283,7 @@ misleading:
 
 1. **Progress logging** that handles both field shapes and prints percentages.
 2. **`isCompleteWithin(50n)` instead of `isStrictlyComplete()`.** `isStrictlyComplete()` is
-   literally `isCompleteWithin(0n)` — it demands *zero* lag against a chain tip that keeps
+   literally `isCompleteWithin(0n)` — it demands _zero_ lag against a chain tip that keeps
    advancing. The SDK's own default tolerance is `maxGap = 50n`. Override via `SYNC_MAX_GAP`.
 
 Both are in test-harness code. **The Compact contract is unmodified**, which is what M0
@@ -292,15 +294,15 @@ requires.
 The **unmodified** official bboard example, compiled and deployed to Midnight PreProd
 testnet, with a confirmed circuit call and ledger state read back.
 
-| | |
-|---|---|
-| Network | **PreProd** |
-| Contract address | `065e342841e17b881d9d02c234a4eea7ae922e3516d5ba1a38547e27b606a944` |
-| Deploy + `post` tx hash | `b00ae97cb198ce9a761259738350b2a74a2c163e78f788981ef0b07952e5edab` |
-| Transaction result | **SUCCESS** |
-| Block height | 2,173,800 |
-| Fee | 1 |
-| Dust generation tx | `00b21b2e334f8ceca1da29ebe958c33cdb6002f497af1276334e41243c685d02b3` |
+|                         |                                                                      |
+| ----------------------- | -------------------------------------------------------------------- |
+| Network                 | **PreProd**                                                          |
+| Contract address        | `065e342841e17b881d9d02c234a4eea7ae922e3516d5ba1a38547e27b606a944`   |
+| Deploy + `post` tx hash | `b00ae97cb198ce9a761259738350b2a74a2c163e78f788981ef0b07952e5edab`   |
+| Transaction result      | **SUCCESS**                                                          |
+| Block height            | 2,173,800                                                            |
+| Fee                     | 1                                                                    |
+| Dust generation tx      | `00b21b2e334f8ceca1da29ebe958c33cdb6002f497af1276334e41243c685d02b3` |
 
 Ledger state read back from chain after calling the `post` circuit:
 
@@ -357,11 +359,11 @@ the deployer. That is a trust property of the deployment rather than a promise.
 The compiler exposes no row-count flag, so these are zkir-level figures with the official
 bboard example as a reference point:
 
-| circuit | zkir instructions | inputs | prover key |
-|---|---|---|---|
-| **Chorus `report`** | **224** | 2 | 5,203,398 B |
-| bboard `post` (reference) | 94 | 1 | 2,826,482 B |
-| bboard `takeDown` (reference) | 128 | 0 | 2,827,107 B |
+| circuit                       | zkir instructions | inputs | prover key  |
+| ----------------------------- | ----------------- | ------ | ----------- |
+| **Chorus `report`**           | **224**           | 2      | 5,203,398 B |
+| bboard `post` (reference)     | 94                | 1      | 2,826,482 B |
+| bboard `takeDown` (reference) | 128               | 0      | 2,827,107 B |
 
 ~2.4× bboard's `post`, which is what two `persistentHash` calls plus Map/Set operations
 cost. The `chorus:handle:v1` domain separator is visible in the compiled zkir as the
@@ -391,7 +393,7 @@ persistentHash<Vector<3, Bytes<32>>>([pad(32, "chorus:nullifier:v1"), handleByte
 export type PureCircuits = {
   commitmentOf(handleBytes: Uint8Array): Uint8Array;
   nullifierOf(handleBytes: Uint8Array, sk: Uint8Array): Uint8Array;
-}
+};
 ```
 
 Check is therefore a local hash plus a public ledger read — no proof, no transaction, no
@@ -423,20 +425,20 @@ secret key appears anywhere in public ledger state; every public value is exactl
 
 ## Repository layout
 
-| Package | What it is |
-|---|---|
-| `contract/` | The Compact contract, its witnesses, the normaliser, and 11 tests. |
-| `api/` | `ChorusAPI` (deploy, join, report) and — separately — `api/read`, the half that cannot write. |
-| `cli/` | The interactive driver, plus the local reporter agent the UI talks to. |
-| `ui/` | Vite + React. Report, Check, and the raw ledger panel. |
-| `video/` | Records the demo: captures the real UI, composites motion graphics, emits captions. |
-| `deployment/` | One JSON record per network. How anything finds the deployed address. |
+| Package       | What it is                                                                                    |
+| ------------- | --------------------------------------------------------------------------------------------- |
+| `contract/`   | The Compact contract, its witnesses, the normaliser, and 11 tests.                            |
+| `api/`        | `ChorusAPI` (deploy, join, report) and — separately — `api/read`, the half that cannot write. |
+| `cli/`        | The interactive driver, plus the local reporter agent the UI talks to.                        |
+| `ui/`         | Vite + React. Report, Check, and the raw ledger panel.                                        |
+| `video/`      | Records the demo: captures the real UI, composites motion graphics, emits captions.           |
+| `deployment/` | One JSON record per network. How anything finds the deployed address.                         |
 
 ### A note on how the UI looks
 
 Deep-night ground, aurora light, glass panels, saturated accents — but the point
 of the visual language is a tension, not a mood. The page has to look built for
-Midnight *and* make the hashes look like hashes, because the ledger reading as a
+Midnight _and_ make the hashes look like hashes, because the ledger reading as a
 wall of meaningless bytes is the entire argument.
 
 Those pull against each other, and the resolution is contrast of **type**, not
@@ -445,7 +447,7 @@ string is set in mono, in one uniform colour, at one weight. So the page can be
 bright and the opaque values still read as inert. Accents are spent on chrome
 and on state — never on making one hash look more interesting than another.
 
-Two things are deliberately *not* prettified, and please do not add them: naming
+Two things are deliberately _not_ prettified, and please do not add them: naming
 commitments, or resolving one back to a handle even when the browser happens to
 know the handle that produced it. A judge shown a friendly table of scammer
 names has been shown the opposite of what Chorus does.
@@ -476,13 +478,13 @@ machine without a funded wallet can still exercise the whole UI.
 
 Be precise about what that does and does not mean:
 
-| Real in local mode | Not real in local mode |
-|---|---|
-| The compiled Compact circuits | The zero-knowledge proof |
-| Commitment and nullifier derivation | The transaction and its fee |
+| Real in local mode                                           | Not real in local mode                                  |
+| ------------------------------------------------------------ | ------------------------------------------------------- |
+| The compiled Compact circuits                                | The zero-knowledge proof                                |
+| Commitment and nullifier derivation                          | The transaction and its fee                             |
 | Duplicate rejection — the contract's own `assert` refuses it | The chain; state is in memory and dies with the process |
-| The threshold flip | |
-| Normalisation | |
+| The threshold flip                                           |                                                         |
+| Normalisation                                                |                                                         |
 
 The agent reports `simulated: true` on `/api/status`, the UI renders a
 **SIMULATED MODE** banner, and the ledger panel shows `network: local`. Output
@@ -496,7 +498,7 @@ secret keys. It binds to `127.0.0.1` only.
 
 **What is staged, stated plainly:** all three reporters are funded from one testnet
 wallet, because the faucet is captcha-gated and three wallets would mean three
-captchas. That is visible on chain as one payer. What is *not* staged: the three
+captchas. That is visible on chain as one payer. What is _not_ staged: the three
 reporter secret keys are independently random, so the three nullifiers are genuinely
 unlinkable, and every report is a real proof and a real transaction.
 
@@ -608,7 +610,7 @@ Three things it took measuring to get right, all of them on the render path:
 - **Split parallel work at beat boundaries, never mid-beat.** Every animated
   value is a pure function of time, verified by diffing the DOM state of a page
   that played into a moment against one that jumped straight to it. What is
-  *not* a pure function of time is Chromium's choice of image resampler: once it
+  _not_ a pure function of time is Chromium's choice of image resampler: once it
   decides an element is animating it switches to a cheaper filter, so a page
   that jumped in cold rasterises a scaled screenshot slightly differently. Beat
   boundaries are the one place that cannot show, because the scene's opacity is
@@ -639,12 +641,12 @@ composite without a full-page repaint.
 
 ## What is public and what is never public
 
-| | |
-|---|---|
-| **Public, permanently, to anyone** | 32-byte commitments · a count for each · 32-byte nullifiers · a match flag · the sealed threshold |
+|                                           |                                                                                                                                                                                                       |
+| ----------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Public, permanently, to anyone**        | 32-byte commitments · a count for each · 32-byte nullifiers · a match flag · the sealed threshold                                                                                                     |
 | **Never public, at any point, to anyone** | The payment handle · the amount lost · the reporter's identity, wallet or secret · which nullifiers belong to the same person · how many handles one person reported · the narrative of what happened |
 
-An observer with a full copy of the chain and unlimited compute learns that *some*
+An observer with a full copy of the chain and unlimited compute learns that _some_
 handle received three reports. They do not learn which handle, from whom, or for how
 much.
 
@@ -655,8 +657,8 @@ everything else.
 
 **The commitment space is grindable.** A payment handle is not high-entropy. An
 attacker who enumerates plausible UPI IDs and derives their commitments can discover
-which handles carry reports. What Chorus protects perfectly is the *reporter*; what it
-protects imperfectly is the *target*. The production fix is a distributed pepper or
+which handles carry reports. What Chorus protects perfectly is the _reporter_; what it
+protects imperfectly is the _target_. The production fix is a distributed pepper or
 threshold decryption held by parties who must cooperate to grind, plus rate-limited
 derivation. This build ships domain-separated commitments and names the gap.
 
@@ -672,7 +674,7 @@ or a rate-limiting nullifier per reporter per period) rather than to adjudicate 
 money. It changes what those three do next, and what the fourth person does before
 paying.
 
-**Normalisation is a one-way door.** The commitment is a hash of the *normalised*
+**Normalisation is a one-way door.** The commitment is a hash of the _normalised_
 handle, so changing `normaliseHandle` after any reports exist orphans every existing
 commitment. It is deliberately conservative — NFKC, strip whitespace, lowercase, and
 nothing else — because collapsing `a.b@upi` into `ab@upi` would land one merchant's
@@ -684,7 +686,7 @@ reports on another's commitment.
 
 **Docker Desktop's WSL integration conflicts with a native Docker install.** This project
 runs Docker CE natively inside the WSL distro under systemd. If Docker Desktop's
-*Settings → Resources → WSL integration* is also enabled for the same distro, its proxy
+_Settings → Resources → WSL integration_ is also enabled for the same distro, its proxy
 overwrites `/var/run/docker.sock` and fails with
 `DockerDesktop/Wsl/ExecError ... failed to read component versions`. Leave that toggle
 **off** — nothing here needs it. Recovery:
