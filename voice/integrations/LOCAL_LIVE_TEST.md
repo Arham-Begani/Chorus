@@ -1,6 +1,6 @@
 # First live test with a local dashboard
 
-This path keeps CHORUS and its authoritative PostgreSQL database on this computer. Supabase supplies operator authentication; Bolna reaches only an authenticated callback gateway over temporary HTTPS. It is a development rehearsal, not a public deployment. No calls have been verified yet.
+This path keeps CHORUS and its authoritative PostgreSQL database on this computer. Supabase supplies operator authentication; Bolna reaches only an authenticated callback gateway over temporary HTTPS. It is a development rehearsal, not a public deployment. An answered call and scoped brief read have been verified; successful spoken quote collection remains unverified. See the latest VERIFICATION.md.
 
 For each authorized rehearsal, configure `LIVE_TEST_ID`, `LIVE_TEST_START_AT`, `LIVE_TEST_END_AT`, `LIVE_TEST_BUDGET_MINOR`, `CALL_COST_RESERVE_MINOR` and `BROWSER_COST_RESERVE_MINOR` privately. Start/end need explicit ISO timezone offsets and span at most 24 hours. The total ceiling covers phone/browser attempts across missions and restarts; outbound research also has its own limit. Uncertain dispatches, unsettled billing and mission deletion do not clear reserves. Explicit pre-acceptance rejections and provider-finalized zero-duration/zero-cost results release unused allowance with an audit record; a provisional zero does not. The phone icon in `/app` displays a secret-free readiness/budget summary. Online diagnostics verify actual agent bindings and callback reachability without dialing.
 
@@ -13,6 +13,18 @@ From the project's **Connect** dialog copy the project URL and **publishable key
 Enable email/password in Authentication, create the operator under Authentication → Users → Add user, and have the operator privately enter the password. Do not paste the password into chat. Set the Auth Site URL to `http://localhost:3000` for this rehearsal. CHORUS currently signs in existing users; it has no public signup or password-reset flow. Disable public signups if only invited operators should use the project. Set `AUTH_MODE=supabase`, keeping `SIMULATION_ONLY=true` and `ENABLE_REAL_CALLS=false`, then restart web and worker. Sign into CHORUS with that operator and run a simulation first. Access-token expiry currently requires signing in again.
 
 ## 2. Prepare protected HTTPS callbacks
+
+For an existing configured installation, the bounded session command manages only its own gateway and tunnel:
+
+```sh
+npm run callbacks:session -- --start --cloudflared "C:/path/to/cloudflared.exe" 45
+```
+
+Use the absolute path to your installed Cloudflare executable and a lifetime of1–60 minutes. Keep ordinary SIMULATION_ONLY=true and ENABLE_REAL_CALLS=false. The command checks local app/database health, binds only loopback3001, and probes dashboard404, missing-secret401 and authenticated unknown-execution202 before updating only CHORUS_CALLBACK_ORIGIN. It records private process identities/logs under ignored .data/callback-sessions. It never reads billing, enables calling, edits agents or places a call. Ctrl+C, tunnel exit or expiry closes only its own server/child. It refuses an occupied gateway port. A failed probe leaves .env unchanged.
+
+After it reports ready, use `npm run bolna:sync -- --apply`, then `npm run bolna:sync` for independent source/readback validation. This preserves configured providers and verifies exact prompts, native quote mappings, silent tools, caps and retry settings. Restarting a tunnel changes its hostname, so refresh/synchronize again before any separately authorized live test. Do not start the manual gateway below alongside a managed session.
+
+The following manual path remains available for diagnosing a configured installation:
 
 From `voice/`, with Node 24.12+:
 
@@ -41,7 +53,7 @@ This writes actual callback URLs and the tool secret to **ignored** `.data/bolna
 
 Sign into [Bolna](https://platform.bolna.ai). Save its API key as `BOLNA_API_KEY` privately. Create two conversation agents named CHORUS conductor and CHORUS phone, using this directory's role prompts and corresponding private tool definitions. Save their distinct IDs in `BOLNA_CONDUCTOR_AGENT_ID` and `BOLNA_PHONE_AGENT_ID`. Set provider voice/language and outbound caller identity available to the account. Verify any destination/number requirements in the account before buying or provisioning telephony.
 
-Phone agent: introduce itself as an AI research assistant; no purchase, reservation, transfer, payment or automatic retry tools. Set its provider-side hard duration limit to `MAX_CALL_SECONDS` and disable automatic rescheduling/retries. The API's `user_data.max_duration_seconds` is context, not a provider-enforced limit. Configure webhook URL `CHORUS_CALLBACK_ORIGIN/api/bolna/webhook` and header `x-chorus-webhook-secret` with `BOLNA_WEBHOOK_SECRET`. Configure all statuses supported by the account. Verify the platform substitutes `%(chorus_token)s` from runtime `user_data` into each tool request; that mapping remains an integration test, not an assumed success.
+Phone agent: introduce itself as an AI research assistant; no purchase, reservation, transfer, payment or automatic retry tools. Set its provider-side hard duration limit to `MAX_CALL_SECONDS` and disable automatic rescheduling/retries. The API's `user_data.max_duration_seconds` is context, not a provider-enforced limit. Configure webhook URL `CHORUS_CALLBACK_ORIGIN/api/bolna/webhook` and header `x-chorus-webhook-secret` with `BOLNA_WEBHOOK_SECRET`. Configure all statuses supported by the account. Use object-valued JSON mappings such as `{"token":{"$var":"chorus_token"}}`; serializing these into legacy percent templates breaks quoted/multiline arguments. Runtime substitution for the brief read was verified in the earlier answered call; native quote writes still require live proof.
 
 Use `OUTBOUND_CONCURRENCY=1` first. `ACCOUNT_CONCURRENCY` must reflect the verified plan and allow at least two sessions including the browser conductor. Three simultaneous phones plus conductor later require at least four. The read-only diagnostic checks the documented account and agent endpoints:
 

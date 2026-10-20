@@ -20,6 +20,15 @@ test('mission lifecycle, revisions, evidence, refresh and approvals', async ({ p
   await expect(page.getByRole('button', { name: 'Approve proposed plan' })).toBeVisible({
     timeout: 60000,
   });
+  const quotes = page.getByRole('table', { name: 'Current quote comparison' });
+  await expect(quotes).toContainText('Confirmed');
+  await expect(quotes.getByRole('row')).toHaveCount(4);
+  await expect(quotes).toContainText('45 min');
+  await page.locator('#quotes').scrollIntoViewIfNeeded();
+  await page
+    .locator('#quotes')
+    .screenshot({ path: `test-results/${info.project.name}-quotes.png` });
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
   const graph = page.locator('.graph');
   await expect(graph.locator('.flow-node')).toHaveCount(4);
   const visible = await graph.evaluate((e) => {
@@ -43,6 +52,8 @@ test('mission lifecycle, revisions, evidence, refresh and approvals', async ({ p
     .fill('User reduced the additional spending limit to INR 9,000');
   await page.getByRole('button', { name: 'Save new revision' }).click();
   await expect(page.getByText('REVISION 2', { exact: true })).toBeVisible();
+  await expect(quotes).toContainText('Not received');
+  await expect(quotes).not.toContainText('Confirmed');
   await expect(page.getByRole('button', { name: 'Approve proposed plan' })).toHaveCount(0);
   await page.getByRole('button', { name: 'Authorize simulated research' }).click();
   await expect(page.getByRole('button', { name: 'Approve proposed plan' })).toBeVisible({
@@ -53,6 +64,15 @@ test('mission lifecycle, revisions, evidence, refresh and approvals', async ({ p
   await page.getByRole('button', { name: 'View evidence', exact: true }).click();
   await expect(page.getByRole('dialog', { name: 'Evidence drawer' })).toBeVisible();
   await expect(page.getByText('Attempt ', { exact: false }).first()).toBeVisible();
+  const evidence = page.getByRole('dialog', { name: 'Evidence drawer' });
+  await evidence.getByRole('button', { name: /^Calls/ }).click();
+  await expect(evidence).toContainText(
+    'This mission runs in simulation. It places no phone calls.',
+  );
+  await evidence.getByRole('button', { name: /^Quotes/ }).click();
+  await expect(evidence).toContainText('historical');
+  await expect(evidence.getByRole('heading', { name: 'Event ledger' })).toHaveCount(0);
+  await evidence.screenshot({ path: `test-results/${info.project.name}-evidence.png` });
   await page.getByRole('button', { name: 'Close evidence', exact: true }).click();
   await expect(page.locator('body')).not.toHaveJSProperty('scrollWidth', 0);
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(
@@ -62,6 +82,22 @@ test('mission lifecycle, revisions, evidence, refresh and approvals', async ({ p
   await page.locator('.graph').screenshot({ path: `test-results/${info.project.name}-graph.png` });
   await page.evaluate(() => window.scrollTo(0, 0));
   await page.screenshot({ path: `test-results/${info.project.name}-mission.png`, fullPage: true });
+  // Presentation-only malformed-length fixture: server evidence stays unchanged.
+  await page.route(/\/api\/missions\/[a-f0-9-]+$/, async (route) => {
+    if (route.request().method() !== 'GET') return route.continue();
+    const response = await route.fetch();
+    const value = await response.json();
+    for (const contact of value.contacts) contact.name = 'Q'.repeat(80);
+    for (const offer of value.offers) offer.description = 'R'.repeat(160);
+    await route.fulfill({ response, json: value });
+  });
+  await page.reload();
+  await page.getByRole('button', { name: 'View sources', exact: true }).click();
+  const longEvidence = page.getByRole('dialog', { name: 'Evidence drawer' });
+  await expect(longEvidence).toContainText('Q'.repeat(80));
+  expect(await longEvidence.evaluate((el) => el.scrollWidth <= el.clientWidth)).toBe(true);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  await page.getByRole('button', { name: 'Close evidence', exact: true }).click();
   expect(errors).toEqual([]);
 });
 test('unauthenticated requests cannot read missions or mint voice sessions', async ({

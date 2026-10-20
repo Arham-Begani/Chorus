@@ -35,12 +35,15 @@ import type { BolnaWebCall } from '@bolna/web-call';
 import type { Mission, Offer, TaskKind, Terms } from '../core/types';
 import ConductorPanel from './conductor-panel';
 import CallReadiness from './call-readiness';
+import QuoteLedger from './quote-ledger';
+import EvidenceContent, { type EvidenceFilter } from './evidence-content';
 import { Brand } from './brand';
 import { ApiError, requestJSON as api } from '../client/api';
 import {
   callOutcome,
   exportBrief,
   missionGuidance,
+  currentOffer as current,
   formatMoney as money,
 } from '../core/presentation';
 type Ready = {
@@ -57,8 +60,6 @@ const icons = {
   equipment: Box,
   delivery: Truck,
 };
-const current = (m: Mission, id: string) =>
-  [...m.offers].reverse().find((o) => o.taskId === id && !o.stale && !o.declined);
 function FlowNode({ data }: NodeProps) {
   const kind = data.kind as TaskKind | undefined;
   const Icon = kind ? icons[kind] : AudioLines;
@@ -170,6 +171,7 @@ export default function MissionControl() {
     [error, setError] = useState(''),
     [notice, setNotice] = useState(''),
     [drawer, setDrawer] = useState(false),
+    [evidenceFilter, setEvidenceFilter] = useState<EvidenceFilter>('all'),
     [modal, setModal] = useState<
       'new' | 'constraints' | 'responses' | 'contacts' | 'conductor' | 'readiness' | null
     >(null),
@@ -193,6 +195,10 @@ export default function MissionControl() {
     busyNow = useRef(busy),
     editRevision = useRef<number | undefined>(undefined);
   busyNow.current = busy;
+  const openEvidence = (filter: EvidenceFilter = 'all') => {
+    setEvidenceFilter(filter);
+    setDrawer(true);
+  };
   const load = useCallback(async () => {
     const epoch = ++loadEpoch.current;
     const items = await api<Mission[]>('missions');
@@ -323,7 +329,7 @@ export default function MissionControl() {
     document.body.style.overflow = 'hidden';
     const dialog = document.querySelector<HTMLElement>('[role="dialog"]');
     const selector =
-      'button:not(:disabled),input:not(:disabled),select:not(:disabled),textarea:not(:disabled),a[href]';
+      'button:not(:disabled),input:not(:disabled),select:not(:disabled),textarea:not(:disabled),a[href],summary';
     dialog?.querySelector<HTMLElement>(selector)?.focus();
     const handler = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
@@ -608,7 +614,7 @@ export default function MissionControl() {
         <a className="nav-item selected" href="#mission">
           <Network size={16} /> Mission control
         </a>
-        <button className="nav-item" onClick={() => setDrawer(true)}>
+        <button className="nav-item" onClick={() => openEvidence()}>
           <FileText size={16} /> Evidence log <span>{m?.events.length || 0}</span>
         </button>
         <div className="side-section">
@@ -949,9 +955,24 @@ export default function MissionControl() {
                   Revise goal <ArrowUpRight size={14} />
                 </button>
               </section>
+              <nav className="workspace-sections" aria-label="Mission sections">
+                <a href="#quotes">
+                  <FileText size={14} /> Quotes & readiness
+                </a>
+                <a href="#mission-overview">
+                  <Network size={14} /> Coordination
+                </a>
+                <a href="#conversations">
+                  <Phone size={14} /> Conversations
+                </a>
+                <a href="#decisions">
+                  <ShieldCheck size={14} /> Your decision
+                </a>
+              </nav>
+              <QuoteLedger mission={m} onEvidence={() => openEvidence('quotes')} />
               <div className="dashboard-grid">
                 <div className="main-column">
-                  <section className="panel graph-panel">
+                  <section className="panel graph-panel" id="mission-overview">
                     <div className="panel-header">
                       <div>
                         <span className="eyebrow">SHARED INTELLIGENCE</span>
@@ -1072,7 +1093,7 @@ export default function MissionControl() {
                               <button
                                 className="icon-button"
                                 aria-label={`View ${c.name} evidence`}
-                                onClick={() => setDrawer(true)}
+                                onClick={() => openEvidence()}
                               >
                                 <ArrowUpRight size={15} />
                               </button>
@@ -1126,7 +1147,7 @@ export default function MissionControl() {
                   <section className="panel activity-panel">
                     <div className="panel-header">
                       <h2>Coordination log</h2>
-                      <button className="text-button" onClick={() => setDrawer(true)}>
+                      <button className="text-button" onClick={() => openEvidence()}>
                         View evidence <ArrowUpRight size={14} />
                       </button>
                     </div>
@@ -1421,64 +1442,7 @@ export default function MissionControl() {
                   <X />
                 </button>
               </div>
-              <p className="caption">
-                Every item links to its persisted source. Simulation is never labeled as a real
-                call.
-              </p>
-              {m?.observations
-                .slice()
-                .reverse()
-                .map((o) => (
-                  <article className="evidence-item" key={o.id}>
-                    <span className="subtle-badge">
-                      {o.mode} · {o.confirmation} · rev {o.revision}
-                    </span>
-                    <p>{o.text}</p>
-                    <code>Attempt {o.attemptId.slice(0, 8)}</code>
-                  </article>
-                ))}
-              {m?.offers
-                .slice()
-                .reverse()
-                .map((o) => (
-                  <article className={`evidence-item ${o.stale ? 'stale' : ''}`} key={o.id}>
-                    <span className="subtle-badge">
-                      {o.mode} · {o.stale ? 'stale' : o.declined ? 'declined' : o.confirmation} ·
-                      rev {o.revision}
-                    </span>
-                    <h3>
-                      {money(o.priceMinor)} · {m.tasks.find((t) => t.id === o.taskId)?.kind}
-                    </h3>
-                    <p>{o.description}</p>
-                    <code>Attempt {o.attemptId.slice(0, 8)}</code>
-                  </article>
-                ))}
-              {m?.attempts
-                .filter((a) => a.mode === 'real' && (a.transcript || a.recordingUrl))
-                .map((a) => (
-                  <article key={a.id} className="evidence-item">
-                    <span className="subtle-badge">Provider artifact · real call</span>
-                    {a.transcript && <p className="transcript">{a.transcript}</p>}
-                    {a.recordingUrl && (
-                      <a href={a.recordingUrl} target="_blank" rel="noreferrer">
-                        Open actual recording <ArrowUpRight size={12} />
-                      </a>
-                    )}
-                  </article>
-                ))}
-              <h3>Event ledger</h3>
-              {m?.events
-                .slice()
-                .reverse()
-                .map((e) => (
-                  <div className="ledger-event" key={e.id}>
-                    <span>
-                      {e.mode} · rev {e.revision} · {time(e.at)}
-                    </span>
-                    <p>{e.message}</p>
-                    <code>{e.type}</code>
-                  </div>
-                ))}
+              <EvidenceContent mission={m} initialFilter={evidenceFilter} />
             </motion.aside>
           </motion.div>
         )}
