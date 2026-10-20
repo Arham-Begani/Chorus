@@ -180,6 +180,10 @@
 }
 .contact-card {
   transition: border-color var(--duration) ease-out;
+  overflow-wrap: anywhere;
+}
+.flow-node {
+  overflow-wrap: anywhere;
 }
 .contact-question {
   line-height: 1.8;
