@@ -2,7 +2,7 @@
 
 **CHORUS voice mission control:** [open the application project](voice/README.md) or [submission guide](voice/SUBMISSION.md). Speak or type an event goal, coordinate simulated vendor research, revise constraints and review a sourced plan. The responsive application, separate worker, PostgreSQL persistence and deployment files live in `voice/`. One answered Bolna call and scoped brief retrieval are verified; structured live coordination remains unverified. Real calling is disabled by default.
 
-**Start in `voice/`:** [setup](voice/README.md) · [three-minute demo](voice/DEMO.md) · [architecture](voice/ARCHITECTURE.md) · [verified results](voice/VERIFICATION.md). [Latest verified CI](https://github.com/Arham-Begani/Chorus/actions/runs/39308735655) passed 150 tests, both container builds, worker recovery and database restore. The submission guide states the live-test limits and final owner steps.
+**Start in `voice/`:** [setup](voice/README.md) · [three-minute demo](voice/DEMO.md) · [architecture](voice/ARCHITECTURE.md) · [verified results](voice/VERIFICATION.md). [Latest verified CI](https://github.com/Arham-Begani/Chorus/actions/runs/39418268872) passed 153 tests, both container builds, worker recovery and database restore. The submission guide states the live-test limits and final owner steps.
 
 ## Earlier Midnight project
 
