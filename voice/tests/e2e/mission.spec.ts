@@ -82,6 +82,22 @@ test('mission lifecycle, revisions, evidence, refresh and approvals', async ({ p
   await page.locator('.graph').screenshot({ path: `test-results/${info.project.name}-graph.png` });
   await page.evaluate(() => window.scrollTo(0, 0));
   await page.screenshot({ path: `test-results/${info.project.name}-mission.png`, fullPage: true });
+  // Presentation-only malformed-length fixture: server evidence stays unchanged.
+  await page.route(/\/api\/missions\/[a-f0-9-]+$/, async (route) => {
+    if (route.request().method() !== 'GET') return route.continue();
+    const response = await route.fetch();
+    const value = await response.json();
+    for (const contact of value.contacts) contact.name = 'Q'.repeat(80);
+    for (const offer of value.offers) offer.description = 'R'.repeat(160);
+    await route.fulfill({ response, json: value });
+  });
+  await page.reload();
+  await page.getByRole('button', { name: 'View sources', exact: true }).click();
+  const longEvidence = page.getByRole('dialog', { name: 'Evidence drawer' });
+  await expect(longEvidence).toContainText('Q'.repeat(80));
+  expect(await longEvidence.evaluate((el) => el.scrollWidth <= el.clientWidth)).toBe(true);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  await page.getByRole('button', { name: 'Close evidence', exact: true }).click();
   expect(errors).toEqual([]);
 });
 test('unauthenticated requests cannot read missions or mint voice sessions', async ({
