@@ -109,6 +109,7 @@
   --font-mono: ui-monospace, 'Cascadia Code', monospace;
   --duration: 150ms;
   --shadow: 0 16px 64px #0006;
+  --accent-hover: #b3e8ed;
   --body: 14px;
   --small: 13px;
   --label: 11px;
@@ -271,7 +272,7 @@ form > .form-grid {
   border-radius: var(--r-sm);
   font-size: var(--small);
   font-weight: 600;
-  min-height: 40px;
+  min-height: 44px;
 }
 .primary {
   background: var(--accent);
@@ -279,7 +280,7 @@ form > .form-grid {
   border: 1px solid var(--accent);
 }
 .primary:hover:not(:disabled) {
-  background: #b3e8ed;
+  background: var(--accent-hover);
 }
 .secondary,
 .voice-button {

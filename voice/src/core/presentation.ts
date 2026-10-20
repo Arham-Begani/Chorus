@@ -1,4 +1,9 @@
 import { type Attempt, type Mission, activeStatuses } from './types';
+export function currentOffer(m: Mission, taskId: string) {
+  return [...m.offers]
+    .reverse()
+    .find((o) => o.taskId === taskId && o.revision === m.revision && !o.stale && !o.declined);
+}
 export function callOutcome(a: Attempt) {
   return (
     (
@@ -82,7 +87,7 @@ export function exportBrief(m: Mission) {
   const money = (v: number) => `INR ${(v / 100).toLocaleString('en-IN')}`;
   const current = m.tasks.map((t) => ({
     t,
-    o: [...m.offers].reverse().find((o) => o.taskId === t.id && !o.stale && !o.declined),
+    o: currentOffer(m, t.id),
   }));
   return [
     `# ${m.title}`,

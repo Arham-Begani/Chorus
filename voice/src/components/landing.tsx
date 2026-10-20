@@ -211,18 +211,29 @@ export default function Landing() {
               <span>Start in simulation. Every action stays yours to approve.</span>
             </div>
           </div>
-          <div className="hero-aside" aria-hidden="true">
-            <div className="signal-glyph">
-              {[24, 48, 80, 128, 96, 64, 32, 64, 96, 128, 80, 48, 24].map((h, i) => (
-                <span key={i} style={{ height: h }} />
-              ))}
+          <aside className="hero-aside" aria-label="An example mission">
+            <div className="hero-field-note">
+              <span>01 / THE REQUEST</span>
+              <strong>
+                40 guests.
+                <br />A new venue.
+                <br />
+                One evening.
+              </strong>
             </div>
-            <span>
-              SEPARATE VOICES.
-              <br />
-              ONE DIRECTION.
-            </span>
-          </div>
+            <div className="hero-field-note">
+              <span>02 / THE CHECK</span>
+              <p>Will access, setup and transport fit the same deadline?</p>
+            </div>
+            <div className="hero-field-note">
+              <span>03 / YOUR DECISION</span>
+              <p>
+                Review the evidence.
+                <br />
+                Approve the plan.
+              </p>
+            </div>
+          </aside>
         </section>
         <section className="landing-width landing-demo" id="interactive-example">
           <div className="section-overline">

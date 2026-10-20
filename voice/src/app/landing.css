@@ -785,3 +785,25 @@
     margin-left: auto;
   }
 }
+.hero-field-note {
+  border-top: 1px solid var(--border);
+  padding-top: var(--space-4);
+}
+.hero-field-note > span {
+  display: block;
+  font-size: var(--label);
+  letter-spacing: 0.04em;
+}
+.hero-field-note strong {
+  display: block;
+  margin-top: var(--space-3);
+  font: 600 var(--title)/1.4 var(--font-sans);
+  letter-spacing: -0.02em;
+  color: var(--text);
+}
+.hero-field-note p {
+  margin-top: var(--space-3);
+  font: 400 var(--small)/1.6 var(--font-sans);
+  letter-spacing: 0;
+  color: var(--muted);
+}

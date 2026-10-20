@@ -1,5 +1,11 @@
 # Verification record
 
+## Quote workspace and callback-session follow-up — 20 October
+
+The supported callback-session command ran successfully with ordinary real calls disabled. Public probes returned404 for dashboard routes,401 without a callback secret and202 for an authenticated unknown execution. Native source prompts/tools, full-sentence audio welcome, silent mappings, duration/retry limits and exact bindings passed PUT/readback plus a separate read-only audit for both configured roles. No provider/voice choice changed. The owner subsequently deferred live testing; the owned tunnel was stopped, the session closed its gateway and no call/browser session or reservation was created. The previous scheduled automation remains PAUSED. This verifies setup, not speech recognition, quote capture or the earlier faint input path.
+
+Current local checks: typecheck,103 unit tests and26 serial PostgreSQL tests passed. New coverage checks bounded lifetimes, disabled-call prerequisites, exact callback-origin replacement/duplicate protection and revision-safe display of free/zero-setup quotes. The first24 browser tests passed, including current quote comparison, stale terms disappearing after revision and responsive layout. Final evidence-filter changes are being rebuilt/reviewed; final browser/CI results will be recorded separately. The native browser inspection tool could not initialize its kernel assets; actual Chromium application checks and rendered screenshots use the existing isolated Playwright workflow instead.
+
 ## Final merged submission checkpoint — 20 October
 
 [PR #10](https://github.com/Arham-Begani/Chorus/pull/10) merged as **1e097b2d03ad0d21040e897f80f993c7a3bee98e** after [Linux CI39308735655](https://github.com/Arham-Begani/Chorus/actions/runs/39308735655) passed for **4ea1f0745a6c7eb56338617fb2f3800b1a6a4bfb**. Measured results: **150 tests:100 unit,26 PostgreSQL integration,24 desktop/mobile browser**, typecheck, optimized production build, both Docker images, actual Compose startup/worker replacement preserving attempts/events, full archive/isolated restore with matching contents and RLS, HTTPS configuration and GitGuardian. This includes the new quote transport/confirmation recovery; later tracked edits only document results.
