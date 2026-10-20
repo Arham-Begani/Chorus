@@ -1,4 +1,12 @@
-# Session handoff — 2026-10-19
+# Session handoff — 2026-10-20
+
+## Latest: native quote capture and confirmation recovery
+
+The owner explicitly clarified **keep 20 October at 11:00 IST**. The existing ACTIVE one-time preparation at10:50, INR50 total, one delivery attempt up to180 seconds and no retry remain unchanged. Do not create another schedule or request the same permission again. Ordinary live flags stay disabled; this improvement pass created no calls, browser sessions, grants or reservations.
+
+Phone quotes now use named fields and exact server-side rupee conversion instead of model-generated JSON/paise arithmetic. Structured JSON variable mappings preserve quoted/multiline answers. Optional unknown fields do not force irrelevant questions; price corrections retain this attempt's supplied time/setup, while explicit retractions clear them. Quote-operation receipts acknowledge exact retries, suppress identical duplicate offers and detect a changed confirmation under a reused key. A fresh-key repair saves the confirmation already given without another human question; delayed retries retain their original quote snapshot.
+
+Local typecheck, **100 unit tests and 26 serial PostgreSQL tests passed**, including authenticated actual route handlers, correction/confirmation persistence, signed native mappings, quoted text, unknown optional markers, exact amounts, duplicate receipts and unchanged security denials. All checks use synthetic terms with provider calls disabled. The provider's public reference helper passed nine mapping checks; the hosted agent accepted object parameters in a no-call probe. Final canonical agent synchronization, production build, browser checks and Linux CI follow when measured. None proves that the previously faint incoming audio is fixed; recognized speech and an actual confirmed quote remain the purpose of the scheduled live test.
 
 ## Latest: spoken reply was not detected; bounded connection recovery
 

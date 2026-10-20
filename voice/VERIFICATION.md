@@ -1,5 +1,11 @@
 # Verification record
 
+## Native quote transport and confirmation recovery — 20 October
+
+Local typecheck, **100 unit tests and 26 serial PostgreSQL tests passed**. Actual signed tool routes received structured variable mappings, preserved quoted/multiline facts, converted INR rupees exactly, saved corrections while retaining supplied optional details, and persisted explicit confirmation. Reused keys with changed terms produce one silent fresh-key repair; exact delayed retries resolve against their original offer. Identical new-key quotes do not create another source event or offer. Secret, scope and role denials remain enforced. These are synthetic route/database checks, not a live model/carrier conversation.
+
+Nine offline mapping checks passed against Bolna's public reference request helper, including quoted text and retained markers for omitted optional arguments. A separate no-call hosted configuration probe preserved object parameters and providers. Final canonical synchronization/build/browser/CI results follow when measured. The prior incoming-audio cause and real spoken quote capture remain unproven. No new call, browser session, authorization or reserve was created. The owner clarified **keep 20 October at11:00 IST**: the existing ACTIVE one-time10:50 preparation and INR50/180-second/no-retry scope remain unchanged.
+
 ## No-input clarification and recovery configuration
 
 The owner confirmed that the 18:30 participant spoke after the greeting but received no reply. Re-fetching the exact matching recipient/agent execution still returned only the welcome, zero recognized speech/model turns and zero scoped tool activity. All six phone-agent executions today map to persisted attempts; the separate answered call around 12:20 has eleven human transcript turns. There is no evidence of a missing late quote or an untracked call.

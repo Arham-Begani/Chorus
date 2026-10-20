@@ -96,6 +96,7 @@ export interface Attempt {
   unchangedBriefReads?: number;
   phoneProgressKey?: string;
   phoneToolFailures?: number;
+  quoteOperations?: { key: string; revision: number; fingerprint: string; offerId?: string }[];
   phoneEndReason?: 'repeated-brief-reads' | 'repeated-tool-errors' | 'owner-clarification';
 }
 export interface Observation {

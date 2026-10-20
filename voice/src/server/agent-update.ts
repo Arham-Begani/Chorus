@@ -56,10 +56,8 @@ export function agentUpdate(
   task.tools_config.api_tools = {
     tools: definitions.map(({ value, ...tool }) => tool),
     tools_params: Object.fromEntries(
-      definitions.map(({ name, value }) => [
-        name,
-        { ...value, param: JSON.stringify(value.param) },
-      ]),
+      // Serializing these markers selects legacy string interpolation and breaks quoted JSON.
+      definitions.map(({ name, value }) => [name, { ...value, param: value.param }]),
     ),
   };
   const maximum = Number(env.MAX_CALL_SECONDS || 180);

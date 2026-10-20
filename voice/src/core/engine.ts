@@ -1,4 +1,4 @@
-import { randomUUID } from 'node:crypto';
+import { createHash, randomUUID } from 'node:crypto';
 import {
   activeStatuses,
   constraintsSchema,
@@ -319,16 +319,40 @@ export function submit(m: Mission, scope: Scope, key: string, revision: number, 
   assertScope(m, scope, true);
   const terms = termsSchema.parse(input);
   const dedup = `${scope.attemptId}:offer:${key}`;
+  const source = m.attempts.find((a) => a.id === scope.attemptId)!;
+  const fingerprint = createHash('sha256')
+    .update(JSON.stringify({ revision, terms }))
+    .digest('hex');
+  const original = source.quoteOperations?.find((operation) => operation.key === key);
+  if (original && (original.revision !== revision || original.fingerprint !== fingerprint))
+    throw new Error(
+      'Operation key already used for different quote terms. Use a fresh key without asking the participant again.',
+    );
   if (m.processedKeys.includes(dedup)) return;
   if (revision !== m.revision)
     throw new Error('Stale revision. Refresh get_mission_brief before submitting terms.');
-  const source = m.attempts.find((a) => a.id === scope.attemptId)!;
   if (source.briefRevision !== m.revision || source.briefEvidenceKey !== evidenceKey(m))
     throw new Error('Brief changed. Refresh get_mission_brief before submitting terms.');
+  const matching = m.offers.find(
+    (o) =>
+      o.attemptId === scope.attemptId &&
+      o.revision === revision &&
+      !o.stale &&
+      !o.declined &&
+      Object.keys(termsSchema.shape).every(
+        (key) => Reflect.get(o, key) === Reflect.get(terms, key),
+      ),
+  );
+  if (matching) {
+    (source.quoteOperations ??= []).push({ key, revision, fingerprint, offerId: matching.id });
+    m.processedKeys.push(dedup);
+    return;
+  }
   for (const o of m.offers) if (o.taskId === scope.taskId) o.stale = true;
+  const offerId = randomUUID();
   m.offers.push({
     ...terms,
-    id: randomUUID(),
+    id: offerId,
     taskId: scope.taskId!,
     attemptId: scope.attemptId!,
     mode: m.mode,
@@ -337,6 +361,7 @@ export function submit(m: Mission, scope: Scope, key: string, revision: number, 
     declined: false,
     createdAt: new Date().toISOString(),
   });
+  (source.quoteOperations ??= []).push({ key, revision, fingerprint, offerId });
   m.processedKeys.push(dedup);
   event(m, 'offer.submitted', terms.description, scope.attemptId);
   evaluate(m);
