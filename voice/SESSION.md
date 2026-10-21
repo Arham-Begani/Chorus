@@ -1,4 +1,10 @@
-# Session handoff — 2026-10-20
+# Session handoff — 2026-10-21
+
+## Pitch redesign — 21 October
+
+The owner requested a stronger pitch design and suggested Canva/templates. Canva was discoverable but not connected; work continued in the existing native Google Slides file, preserving its URL. The deck now has eight slides with paper/ink/cyan colors, Georgia/Arial typography, licensed real venue photography, larger actual product evidence and a problem/product/integration/proof story. The budget image was recaptured through the real typed simulation UI, showing the exact ₹9,000 command and revision 2. No research, phone call or paid browser session was authorized. Normal simulation services were restored after the machine restart; operator email auth is unchanged.
+
+Native readback revision **gywZmamiZre_ew** has eight correctly ordered slides, five images and editable text/tables. The issue checker reported zero issues. All eight pages of the final PDF export were rendered and visually reviewed after the consolidated repair. Image credits and source/claim boundaries are in speaker notes. Live quote proof remains pending; public pitch sharing and owner registration/submission are still outstanding. Application code and the previously verified 153-test head are unchanged. The refreshed downloadable package records current hashes and source/doc checkpoint; earlier verification sections below remain historical.
 
 ## Current: quote workspace and bounded callback setup
 
