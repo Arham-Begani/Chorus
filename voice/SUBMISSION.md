@@ -2,7 +2,7 @@
 
 ## Bolna Symphony Buildathon
 
-Reviewed the [event page](https://www.bolna.ai/symphony/buildathon) and [actual submission form](https://www.bolna.ai/symphony/buildathon/submit) on 20 October 2026. The form returned HTTP200. The event page lists **31 October 2026** as the submission date; it does not specify a cutoff time/timezone. The **20 November** date is the finale. Confirm the cutoff with the organizer if submitting near the deadline.
+Rechecked the [event page](https://www.bolna.ai/symphony/buildathon) and [actual submission form](https://www.bolna.ai/symphony/buildathon/submit) on 23 October 2026. The form is available and its required fields remain unchanged. The event page lists **31 October 2026** as the submission date; it does not specify a cutoff time/timezone. The **20 November** date is the finale. Aim to submit by 30 October rather than relying on an unspecified final-hour cutoff.
 
 The form asks for team size, full name, the same email used to register, project name, a description of at most 200 characters, a submission link, and a pitch deck or video link. It accepts a GitHub repository, live application or demo as the submission link. For the pitch it requests a Google Drive or Luma link with anyone-with-the-link access. No separate published judging rubric, required video duration or requirement for permanent hosting appears on those pages. This is an observed form checklist, not a guarantee of acceptance.
 
@@ -16,11 +16,13 @@ The form asks for team size, full name, the same email used to register, project
 
 **Submission link:** https://github.com/Arham-Begani/Chorus/tree/main/voice
 
-**Pitch deck:** [CHORUS Buildathon pitch](https://docs.google.com/presentation/d/1jxlDhMXbVzT6sbEnf7j6L3BUSDWR5wP06I2qFlDGmnU). Eight slides, redesigned in place on 21 October with venue photography, enlarged actual product screenshots, the coordination example, Bolna architecture and measured 153-test result. The mobile image shows the exact typed ₹9,000 revision. Text/tables remain editable; photo credits and evidence sources are in speaker notes. Every final PDF page was rendered and visually reviewed. Live quote proof remains explicitly pending. **Public viewing still needs the owner to set Share → General access → Anyone with the link → Viewer**, then check this URL signed out. The Drive connector supports individual/domain sharing, not public-anyone permissions. The 20 October signed-out check returned HTTP401. A private deck is not a usable judge link. Do not paste a local filesystem URL into the form.
+**Current pitch deck:** [CHORUS pitch - redesign](https://docs.google.com/presentation/d/1kFYbbos2bv-y8siRZz47gnc-_F_a3I6LTuCYmKFEoC4/edit). This is the owner's newer nine-slide deck, replacing the earlier eight-slide draft. The final submission pass preserved its design, exported it to PDF and visually reviewed all nine pages. It covers the timing conflict, product, shared context, source terms, revisions, Bolna architecture and measured 153-test result, with live quote proof explicitly pending. **Public viewing still needs the owner to set Share → General access → Anyone with the link → Viewer.** An isolated signed-out Chromium session on 23 October redirected to Google sign-in; connected-account read access does not establish judge access. The Drive connector supports individual/domain sharing, not public-anyone permissions. A private deck is not a usable judge link. Do not paste a local filesystem URL into the form.
 
 Team size, registered email and participant identity are owner-supplied. No application or final submission has been sent by the agent.
 
 ## What judges can try
+
+Use [JUDGES.md](JUDGES.md) as the entry point: the product in one paragraph, an actual source-labelled screenshot, a short rehearsal and the exact proof boundary. [ARCHITECTURE.md](ARCHITECTURE.md) includes a diagram of the implemented paths. The root README links directly to the voice project so judges do not accidentally follow the separate Midnight instructions.
 
 Follow [README.md](README.md) from `voice/`. Node 24.12+ and PostgreSQL 17 are required. On this configured Windows installation, `powershell -NoProfile -File scripts/start-local.ps1` restores missing database/web/worker processes and waits for readiness. It preserves existing data, email auth and `.env`. It supports the documented local simulation configuration only. A fresh install still needs `npm ci`, `npm run setup` and `npm run build` first.
 

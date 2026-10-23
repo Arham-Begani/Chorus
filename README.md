@@ -4,6 +4,10 @@
 
 **Start in `voice/`:** [setup](voice/README.md) · [three-minute demo](voice/DEMO.md) · [architecture](voice/ARCHITECTURE.md) · [verified results](voice/VERIFICATION.md). [Latest verified CI](https://github.com/Arham-Begani/Chorus/actions/runs/39418268872) passed 153 tests, both container builds, worker recovery and database restore. The submission guide states the live-test limits and final owner steps.
 
+**Buildathon judges:** [start with the judge's guide](voice/JUDGES.md) for the product, reproduction steps and proof limits. [Current nine-slide pitch](https://docs.google.com/presentation/d/1kFYbbos2bv-y8siRZz47gnc-_F_a3I6LTuCYmKFEoC4/edit).
+
+![CHORUS current quote comparison, with simulated terms](voice/docs/images/current-quotes.png)
+
 ## Earlier Midnight project
 
 The separate Midnight project documented below is preserved. Its wallet, token and contract instructions are unrelated to the voice application.

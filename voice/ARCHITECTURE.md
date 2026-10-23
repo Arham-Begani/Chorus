@@ -1,5 +1,20 @@
 # Architecture
 
+```mermaid
+flowchart LR
+  Input["Organizer: speech or typed goal"] --> API["Next.js API: ownership and revision checks"]
+  API --> DB[("PostgreSQL: mission, attempts and events")]
+  DB --> Worker["Dedicated worker: durable queue and admission"]
+  Worker --> Simulation["Simulation adapter"]
+  Worker --> Bolna["Bolna agents"]
+  Simulation --> DB
+  Bolna --> Tools["Attempt-scoped tools and protected callbacks"]
+  Tools --> API
+  DB --> View["Workspace: current terms, evidence and approval"]
+```
+
+The diagram shows implemented paths. Successful structured live quote collection remains unverified; the simulation does not place phone calls.
+
 Next.js browser → authenticated API → PostgreSQL mission aggregate and transactional projections/events. Dedicated Node worker → pg-boss durable wakeups → reserve attempts in a committed transaction → provider adapter outside transaction → persist execution id. Browser polls persisted state; navigation never owns jobs.
 
 The number-free browser conductor accepts typed text or browser-recognized speech through POST /api/conductor. A deterministic interpreter extracts supported goals/commands, INR amounts, capacity and zoned deadlines; explicit approval cards still own authorization. Creation keys are owner-scoped HMAC UUIDs and insert-on-conflict returns the original aggregate without resetting progress. Subsequent commands deduplicate and check revisions under the mission row lock. Actual input source and replies persist as conductor events, distinct from simulated or provider business evidence. Recognition and optional speech synthesis are browser capabilities; no audio is stored by CHORUS. Bolna browser sessions remain a separate configured integration.

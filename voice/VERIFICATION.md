@@ -1,5 +1,11 @@
 # Verification record
 
+## Final submission audit — 23 October
+
+Typecheck, **103 unit tests and all24 desktop/mobile browser cases passed** on Node24.19.0; browser duration3.1 minutes. Application/test code is unchanged from verified head e848311cb4d0eb66ced9e18d5ef800407c2fed2d. The full earlier CI result remains153 tests, including26 PostgreSQL cases and deployment/recovery checks; those26 cases and container builds were not repeated today. Normal production services and operator email authentication were restored after the isolated simulation run, with real calls disabled.
+
+An actual Chromium session with no saved authentication could read GitHub but followed the current pitch to Google sign-in. The newer nine-slide owner-provided deck was exported and all pages visually reviewed without changing its design. Submission references, judge's guide, README screenshot and architecture diagram now point at the correct voice product and pitch. The event/form were rechecked on23 October; no final form was submitted. Public pitch viewing and owner registration fields remain required. No call/browser lease, new authorization/reservation or temporary tunnel was created. Package hashes and private-value scanning are recorded in the delivered manifest.
+
 ## Quote workspace and callback-session follow-up — 20 October
 
 The supported callback-session command ran successfully with ordinary real calls disabled. Public probes returned404 for dashboard routes,401 without a callback secret and202 for an authenticated unknown execution. Native source prompts/tools, full-sentence audio welcome, silent mappings, duration/retry limits and exact bindings passed PUT/readback plus a separate read-only audit for both configured roles. No provider/voice choice changed. The owner subsequently deferred live testing; the owned tunnel was stopped, the session closed its gateway and no call/browser session or reservation was created. The previous scheduled automation remains PAUSED. This verifies setup, not speech recognition, quote capture or the earlier faint input path.

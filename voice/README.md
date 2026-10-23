@@ -2,6 +2,8 @@
 
 One spoken goal, several coordinated conversations, one accountable plan. This application is self-contained in `voice/`. The existing Midnight project elsewhere in this repository is preserved.
 
+**Evaluating the build?** [Judge's guide](JUDGES.md) · [current pitch](https://docs.google.com/presentation/d/1kFYbbos2bv-y8siRZz47gnc-_F_a3I6LTuCYmKFEoC4/edit) · [three-minute demo](DEMO.md)
+
 **Delivery mode: working browser conductor and coordinated simulation, with limited live phone proof.** Speak or type goals and revisions without a phone number. Operator sign-in uses email/password when Supabase is configured. One answered 100-second phone call, transcript and scoped brief retrieval were verified; structured live quote collection, paid browser voice and coordinated live revisions remain unverified. Calling stays disabled by default. See [CAPABILITIES.md](CAPABILITIES.md) and [VERIFICATION.md](VERIFICATION.md).
 
 ## Run locally

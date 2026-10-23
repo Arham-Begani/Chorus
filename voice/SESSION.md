@@ -1,4 +1,14 @@
-# Session handoff — 2026-10-21
+# Session handoff — 2026-10-23
+
+## Final submission audit — 23 October
+
+The owner requested final improvements before submission. Replaced current submission references to the earlier deck with the owner's newer nine-slide pitch, **1kFYbbos2bv-y8siRZz47gnc-_F_a3I6LTuCYmKFEoC4**, native revision **ucUG1ZRZqy5I7w**. Its design was preserved; all nine exported PDF pages were rendered and visually reviewed. Added JUDGES.md, an actual labelled simulation screenshot in the repository entry, an implemented-path architecture diagram and an updated live-test checkpoint. The refreshed ZIP/manifest identify the current pitch and exact packaged source commit. Historical pitch sections below are superseded.
+
+Fresh Node24.19.0 typecheck, **103 unit tests and all24 desktop/mobile browser checks passed (3.1 minutes)**. These exercised the production build of unchanged application code against an isolated simulation instance. The process-level PLAYWRIGHT_BROWSERS_PATH pointed to an unavailable D: cache; selecting the already installed C: browser cache for these checks resolved it without a dependency or code change. Normal services and operator email auth were restored. The previous green CI's26 database cases and container/recovery checks were not rerun today; the full verified application head remains e848311cb4d0eb66ced9e18d5ef800407c2fed2d.
+
+An isolated signed-out Chromium context could read the public repository (HTTP200), but the current pitch redirected to Google sign-in. Public sharing remains an owner action; available Drive tools support user/domain sharing, not public-anyone access. The official event and actual form were rechecked on23 October:31 October submission date, no published cutoff timezone, required project/identity/link fields unchanged. Aim for30 October. Registration identity, public pitch access and final form submission remain unverified/outstanding. Confirmed live quote collection remains unverified. No real call, paid browser session, tunnel, new grant or reservation was created, and the old automation remains PAUSED.
+
+Automatic approval review rejected one combined local handoff-write/copy command as blocked by policy; it did not run. Separate supported file edits completed the reversible document update and PDF copy. No phone setup action was involved. Final artifacts are verified separately in the manifest.
 
 ## Pitch redesign — 21 October
 
