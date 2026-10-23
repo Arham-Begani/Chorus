@@ -1,5 +1,13 @@
 # Verification record
 
+## Final pre-submission check — 23 October
+
+Fresh typecheck and **165 automated tests passed: 115 unit, 26 serial PostgreSQL integration and 24 desktop/mobile browser** (browser: 3.9 minutes). Application/test/dependency/workflow files remain identical to the green [CI release](https://github.com/Arham-Begani/Chorus/actions/runs/39957511419), including its production/container builds, worker restart recovery, isolated database restore with RLS and HTTPS verification. Those builds were not repeated during this final rehearsal.
+
+The normal simulation services were restored. Landing, workspace and health returned 200; unauthenticated missions returned 401. The email/password login rendered with zero page errors in an isolated browser; no operator login was attempted. Fresh Plan checks and mobile landing screenshots passed visual review, and browser tests exercised both mission types, approvals, revisions, current/historical sources, persisted state, typed/speech-protocol fallback, failures and long strings. Calls stayed disabled; the state audit found no active real mission or skipped-test reservation.
+
+The source/package archive passed commit, CRC, artifact-hash and excluded-path checks. Signed-out repository access passed; the public judge guide/setup/demo/image paths returned 200. The official event/form were rechecked and the description is 179/200 characters. **Pitch access fails:** the current deck still redirects to Google sign-in and has only owner access. The owner must enable anyone-with-link viewing before submission, then provide/review team size, full name and registered email. Confirmed live quotes and hardware audio remain unverified. No competition form, real call or paid browser session was sent.
+
 ## Explainable plan review
 
 Local typecheck, 115 unit, 26 serial PostgreSQL, optimized production build and all 24 desktop/mobile browser cases passed for the shared assessment and current-revision/current-mode selection change. Browser duration: 3.6 minutes. New cases cover a 15-minute setup miss, earlier access, the later equipment/delivery bottleneck, exact-deadline installation, free/zero-minute terms, incomplete totals, confirmations/capacity gaps, owner clarification, invalid legacy timestamps and excluded historical/mismatched/declined terms. Plan checks screenshots passed desktop/mobile visual review. Production simulation services were restored and health returned 200. No real call or paid browser session occurred.
