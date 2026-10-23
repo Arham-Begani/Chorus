@@ -1,5 +1,11 @@
 # Session handoff — 2026-10-23
 
+## Explainable plan review
+
+The owner requested the strongest competition entry we can deliver. Added a shared pure plan assessment used by engine admission, the workspace's new Plan checks section and exported briefs. It explains access plus setup/installation, shared budget headroom, capacity and current confirmations with source attempts. Missing quotes remain incomplete; free/zero-minute terms and exact-deadline readiness remain valid. The engine, brief, evidence key and UI now share a selector requiring the current revision and mode, rather than trusting a stale flag alone. Invalid legacy readiness timestamps block approval. No schema, auth, provider configuration or calling permissions changed; no call or paid browser session was started.
+
+Local typecheck,115 unit tests and26 isolated serial PostgreSQL tests passed, including new boundary, provenance, partial-total and immutable-assessment regressions. Production build, browser visual checks and complete Linux CI follow when measured. The owner's nine-slide pitch design is preserved. Confirmed live quote collection and public pitch access remain unverified.
+
 ## Final submission audit — 23 October
 
 The owner requested final improvements before submission. Replaced current submission references to the earlier deck with the owner's newer nine-slide pitch, **1kFYbbos2bv-y8siRZz47gnc-_F_a3I6LTuCYmKFEoC4**, native revision **ucUG1ZRZqy5I7w**. Its design was preserved; all nine exported PDF pages were rendered and visually reviewed. Added JUDGES.md, an actual labelled simulation screenshot in the repository entry, an implemented-path architecture diagram and an updated live-test checkpoint. The refreshed ZIP/manifest identify the current pitch and exact packaged source commit. Historical pitch sections below are superseded.

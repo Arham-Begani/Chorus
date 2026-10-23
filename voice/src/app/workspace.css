@@ -1043,6 +1043,114 @@
   content: '+';
   margin-right: var(--space-2);
 }
+
+.plan-checks {
+  margin-bottom: var(--space-6);
+  scroll-margin-top: var(--space-24);
+}
+.plan-checks-context {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--space-2) var(--space-6);
+  padding: 0 var(--space-6) var(--space-4);
+  color: var(--muted);
+  font-size: var(--small);
+}
+.plan-checks-context strong {
+  color: var(--text);
+  font-weight: 400;
+}
+.plan-checks-context > span:last-child {
+  margin-left: auto;
+}
+.plan-check-row {
+  display: grid;
+  grid-template-columns: minmax(160px, 1fr) minmax(0, 4fr);
+  gap: var(--space-6);
+  padding: var(--space-4) var(--space-6);
+  border-top: 1px solid var(--border);
+  overflow-wrap: anywhere;
+}
+.plan-check-row dt {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-2);
+  font-size: var(--small);
+}
+.plan-check-row dt strong {
+  font-weight: 400;
+}
+.plan-check-status {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--label);
+}
+.plan-check-status.pass {
+  color: var(--success);
+}
+.plan-check-status.fail {
+  color: var(--danger);
+}
+.plan-check-status.pending {
+  color: var(--muted);
+}
+.plan-check-row dd {
+  margin: 0;
+  font-size: var(--small);
+  line-height: 1.6;
+  min-width: 0;
+}
+.plan-check-row dd p + p {
+  margin-top: var(--space-1);
+}
+.plan-check-row dd small {
+  display: block;
+  margin-top: var(--space-2);
+  color: var(--muted);
+  font: var(--label)/1.5 var(--font-mono);
+}
+.plan-checks-note {
+  padding: var(--space-4) var(--space-6);
+  border-top: 1px solid var(--border);
+  font-size: var(--small);
+  color: var(--muted);
+  line-height: 1.6;
+}
+.plan-checks .text-button {
+  min-height: 44px;
+}
+@media (max-width: 700px) {
+  .plan-checks .panel-header {
+    flex-wrap: wrap;
+    gap: var(--space-3);
+    align-items: flex-start;
+  }
+  .plan-checks-context {
+    flex-direction: column;
+    gap: var(--space-2);
+  }
+  .plan-checks-context > span:last-child {
+    margin-left: 0;
+  }
+  .plan-check-row {
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--space-3);
+  }
+  .plan-check-row dt {
+    flex-direction: row;
+    align-items: center;
+    gap: var(--space-4);
+    flex-wrap: wrap;
+  }
+  .plan-checks-context,
+  .plan-check-row,
+  .plan-checks-note {
+    padding-inline: var(--space-4);
+  }
+}
 .evidence-transcript[open] summary::before {
   content: '−';
 }
