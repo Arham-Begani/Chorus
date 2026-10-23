@@ -1,5 +1,9 @@
 # Verification record
 
+## Explainable plan review
+
+Local typecheck,115 unit and26 serial PostgreSQL tests passed for the shared assessment and current-revision/current-mode selection change. New cases cover a15-minute setup miss, earlier access, the later equipment/delivery bottleneck, exact-deadline installation, free/zero-minute terms, incomplete totals, confirmations/capacity gaps, owner clarification, invalid legacy timestamps and excluded historical/mismatched/declined terms. Production build, browser checks and CI are pending at this checkpoint. No real call or paid browser session occurred.
+
 ## Final submission audit — 23 October
 
 Typecheck, **103 unit tests and all24 desktop/mobile browser cases passed** on Node24.19.0; browser duration3.1 minutes. Application/test code is unchanged from verified head e848311cb4d0eb66ced9e18d5ef800407c2fed2d. The full earlier CI result remains153 tests, including26 PostgreSQL cases and deployment/recovery checks; those26 cases and container builds were not repeated today. Normal production services and operator email authentication were restored after the isolated simulation run, with real calls disabled.

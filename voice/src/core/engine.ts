@@ -1,4 +1,6 @@
 import { createHash, randomUUID } from 'node:crypto';
+import { currentOffer } from './offers';
+import { assessPlan } from './plan-assessment';
 import {
   activeStatuses,
   constraintsSchema,
@@ -24,7 +26,7 @@ export function event(m: Mission, type: string, message: string, attemptId?: str
   });
 }
 export function latest(m: Mission, taskId: string): Offer | undefined {
-  return [...m.offers].reverse().find((o) => o.taskId === taskId && !o.declined && !o.stale);
+  return currentOffer(m, taskId);
 }
 export function evidenceKey(m: Mission) {
   return m.tasks.map((t) => latest(m, t.id)?.id || '-').join(':');
@@ -73,80 +75,14 @@ export function requestApproval(m: Mission, kind: Approval['kind'], force = fals
   return a;
 }
 export function evaluate(m: Mission) {
-  const conflicts: Mission['conflicts'] = [];
-  const add = (kind: Mission['conflicts'][number]['kind'], message: string, taskId?: string) =>
-    conflicts.push({ id: `${kind}:${taskId || 'all'}`, kind, message, taskId });
-  const offers = m.tasks.map((t) => latest(m, t.id));
-  const total = offers.reduce((s, o) => s + (o?.priceMinor || 0), 0);
-  for (const [i, o] of offers.entries()) {
-    const t = m.tasks[i];
-    if (!o) {
-      add('missing', `${t.title}: current terms needed.`, t.id);
-      continue;
-    }
-    if (o.confirmation !== 'confirmed')
-      add('confirmation', `${t.title}: terms are reported, awaiting confirmation.`, t.id);
-    if (
-      ['venue', 'transport', 'equipment'].includes(t.kind) &&
-      (o.capacity === undefined || o.capacity < m.constraints.quantity)
-    )
-      add('capacity', `${t.title}: capacity must be at least ${m.constraints.quantity}.`, t.id);
-  }
-  if (total > m.constraints.budgetMinor)
-    add(
-      'budget',
-      `Additional spending exceeds the budget by INR ${((total - m.constraints.budgetMinor) / 100).toLocaleString('en-IN')}.`,
-    );
-  const end = Date.parse(m.constraints.eventStart);
-  const byKind = (kind: string) => offers.find((o, i) => o && m.tasks[i].kind === kind);
-  const venue = byKind('venue'),
-    caterer = byKind('caterer'),
-    transport = byKind('transport'),
-    equipment = byKind('equipment'),
-    delivery = byKind('delivery');
-  if (m.scenario === 'relocation') {
-    if (venue && !venue.readyAt) add('missing', 'Venue access time is required.', venue.taskId);
-    if (caterer && caterer.setupMinutes === undefined)
-      add('missing', 'Caterer setup duration is required.', caterer.taskId);
-    if (
-      venue?.readyAt &&
-      caterer?.setupMinutes !== undefined &&
-      Date.parse(venue.readyAt) + caterer.setupMinutes * 60000 > end
-    )
-      add(
-        'timing',
-        `Venue access plus ${caterer.setupMinutes} minutes of catering setup misses the start by ${Math.ceil((Date.parse(venue.readyAt) + caterer.setupMinutes * 60000 - end) / 60000)} minutes. Ask for earlier access.`,
-        venue.taskId,
-      );
-    if (transport && (!transport.readyAt || Date.parse(transport.readyAt) > end))
-      add('timing', 'Transport must arrive before the event starts.', transport.taskId);
-  } else {
-    if (equipment && (!equipment.readyAt || Date.parse(equipment.readyAt) > end))
-      add('timing', 'Equipment must be available before the event.', equipment.taskId);
-    if (
-      delivery &&
-      (!delivery.readyAt ||
-        delivery.setupMinutes === undefined ||
-        Math.max(
-          Date.parse(delivery.readyAt),
-          equipment?.readyAt ? Date.parse(equipment.readyAt) : 0,
-        ) +
-          (delivery.setupMinutes || 0) * 60000 >
-          end)
-    )
-      add(
-        'timing',
-        'Delivery, equipment availability and installation must fit before the event.',
-        delivery.taskId,
-      );
-  }
-  for (const c of m.conflicts.filter((c) => c.kind === 'clarification')) conflicts.push(c);
+  const assessment = assessPlan(m);
+  const { conflicts } = assessment;
   const previous = m.conflicts.map((c) => c.id + ':' + c.message).join('|');
   m.conflicts = conflicts;
   m.plan = {
-    offerIds: offers.filter((o): o is Offer => !!o).map((o) => o.id),
-    totalMinor: total,
-    feasible: conflicts.length === 0,
+    offerIds: assessment.offerIds,
+    totalMinor: assessment.totalMinor,
+    feasible: assessment.feasible,
   };
   for (const a of m.approvals)
     if (

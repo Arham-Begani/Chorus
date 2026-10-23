@@ -1,9 +1,7 @@
 import { type Attempt, type Mission, activeStatuses } from './types';
-export function currentOffer(m: Mission, taskId: string) {
-  return [...m.offers]
-    .reverse()
-    .find((o) => o.taskId === taskId && o.revision === m.revision && !o.stale && !o.declined);
-}
+import { currentOffer } from './offers';
+import { assessPlan } from './plan-assessment';
+export { currentOffer } from './offers';
 export function callOutcome(a: Attempt) {
   return (
     (
@@ -116,6 +114,13 @@ export function exportBrief(m: Mission) {
     '## Open checks',
     ...(m.conflicts.length ? m.conflicts.map((c) => '- ' + c.message) : ['No current conflicts.']),
     '',
+    '## Plan checks and reasoning',
+    ...assessPlan(m).checks.flatMap((check) => [
+      `### ${check.label}: ${check.status}`,
+      ...check.details,
+      ...(check.attemptIds.length ? [`Source attempts: ${check.attemptIds.join(', ')}`] : []),
+      '',
+    ]),
     'This is a research proposal. Approval records a preference; no purchase, reservation or cancellation has been made.',
   ].join('\n');
 }

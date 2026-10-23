@@ -24,6 +24,16 @@ test('mission lifecycle, revisions, evidence, refresh and approvals', async ({ p
   await expect(quotes).toContainText('Confirmed');
   await expect(quotes.getByRole('row')).toHaveCount(4);
   await expect(quotes).toContainText('45 min');
+  const checks = page.getByRole('region', { name: 'Plan checks', exact: true });
+  await expect(checks).toContainText('4 of 4 checks pass');
+  await expect(checks).toContainText('45 min setup');
+  await expect(checks).toContainText('15 min before the start');
+  await checks.screenshot({ path: `test-results/${info.project.name}-plan-checks.png` });
+  await checks.getByRole('button', { name: 'Check sources', exact: true }).click();
+  await expect(
+    page.getByRole('dialog', { name: 'Evidence drawer' }).getByRole('button', { name: /^Quotes/ }),
+  ).toHaveAttribute('aria-pressed', 'true');
+  await page.getByRole('button', { name: 'Close evidence', exact: true }).click();
   await page.locator('#quotes').scrollIntoViewIfNeeded();
   await page
     .locator('#quotes')
@@ -54,6 +64,9 @@ test('mission lifecycle, revisions, evidence, refresh and approvals', async ({ p
   await expect(page.getByText('REVISION 2', { exact: true })).toBeVisible();
   await expect(quotes).toContainText('Not received');
   await expect(quotes).not.toContainText('Confirmed');
+  await expect(checks).toContainText('0 of 4 checks pass');
+  await expect(checks).toContainText('the total is incomplete');
+  await expect(checks).not.toContainText('Source attempts');
   await expect(page.getByRole('button', { name: 'Approve proposed plan' })).toHaveCount(0);
   await page.getByRole('button', { name: 'Authorize simulated research' }).click();
   await expect(page.getByRole('button', { name: 'Approve proposed plan' })).toBeVisible({

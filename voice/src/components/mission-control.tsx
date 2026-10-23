@@ -36,6 +36,7 @@ import type { Mission, Offer, TaskKind, Terms } from '../core/types';
 import ConductorPanel from './conductor-panel';
 import CallReadiness from './call-readiness';
 import QuoteLedger from './quote-ledger';
+import PlanChecks from './plan-checks';
 import EvidenceContent, { type EvidenceFilter } from './evidence-content';
 import { Brand } from './brand';
 import { ApiError, requestJSON as api } from '../client/api';
@@ -959,6 +960,9 @@ export default function MissionControl() {
                 <a href="#quotes">
                   <FileText size={14} /> Quotes & readiness
                 </a>
+                <a href="#plan-checks">
+                  <Check size={14} /> Plan checks
+                </a>
                 <a href="#mission-overview">
                   <Network size={14} /> Coordination
                 </a>
@@ -970,6 +974,7 @@ export default function MissionControl() {
                 </a>
               </nav>
               <QuoteLedger mission={m} onEvidence={() => openEvidence('quotes')} />
+              <PlanChecks mission={m} onEvidence={() => openEvidence('quotes')} />
               <div className="dashboard-grid">
                 <div className="main-column">
                   <section className="panel graph-panel" id="mission-overview">
