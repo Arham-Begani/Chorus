@@ -2,9 +2,11 @@
 
 **CHORUS voice mission control:** [open the application project](voice/README.md) or [submission guide](voice/SUBMISSION.md). Speak or type an event goal, coordinate simulated vendor research, revise constraints and review a sourced plan. The responsive application, separate worker, PostgreSQL persistence and deployment files live in `voice/`. One answered Bolna call and scoped brief retrieval are verified; structured live coordination remains unverified. Real calling is disabled by default.
 
-**Start in `voice/`:** [setup](voice/README.md) · [three-minute demo](voice/DEMO.md) · [architecture](voice/ARCHITECTURE.md) · [verified results](voice/VERIFICATION.md). [Latest verified CI](https://github.com/Arham-Begani/Chorus/actions/runs/39418268872) passed 153 tests, both container builds, worker recovery and database restore. The submission guide states the live-test limits and final owner steps.
+**Start in `voice/`:** [setup](voice/README.md) · [three-minute demo](voice/DEMO.md) · [architecture](voice/ARCHITECTURE.md) · [verified results](voice/VERIFICATION.md). [Latest verified CI](https://github.com/Arham-Begani/Chorus/actions/runs/39957511419) passed 165 tests, both container builds, worker recovery and database restore. The submission guide states the live-test limits and final owner steps.
 
 **Buildathon judges:** [start with the judge's guide](voice/JUDGES.md) for the product, reproduction steps and proof limits. [Current nine-slide pitch](https://docs.google.com/presentation/d/1kFYbbos2bv-y8siRZz47gnc-_F_a3I6LTuCYmKFEoC4/edit).
+
+**See why a plan fits:** the workspace shows access plus setup time, budget headroom, capacity and current confirmations with source references. The engine and exported brief use the same checks. Outdated revisions and terms from another execution mode cannot fill missing evidence.
 
 ![CHORUS current quote comparison, with simulated terms](voice/docs/images/current-quotes.png)
 

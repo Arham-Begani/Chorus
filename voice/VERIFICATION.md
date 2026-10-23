@@ -2,7 +2,11 @@
 
 ## Explainable plan review
 
-Local typecheck,115 unit and26 serial PostgreSQL tests passed for the shared assessment and current-revision/current-mode selection change. New cases cover a15-minute setup miss, earlier access, the later equipment/delivery bottleneck, exact-deadline installation, free/zero-minute terms, incomplete totals, confirmations/capacity gaps, owner clarification, invalid legacy timestamps and excluded historical/mismatched/declined terms. Production build, browser checks and CI are pending at this checkpoint. No real call or paid browser session occurred.
+Local typecheck, 115 unit, 26 serial PostgreSQL, optimized production build and all 24 desktop/mobile browser cases passed for the shared assessment and current-revision/current-mode selection change. Browser duration: 3.6 minutes. New cases cover a 15-minute setup miss, earlier access, the later equipment/delivery bottleneck, exact-deadline installation, free/zero-minute terms, incomplete totals, confirmations/capacity gaps, owner clarification, invalid legacy timestamps and excluded historical/mismatched/declined terms. Plan checks screenshots passed desktop/mobile visual review. Production simulation services were restored and health returned 200. No real call or paid browser session occurred.
+
+[PR #12](https://github.com/Arham-Begani/Chorus/pull/12) merged as **1ff874deff1050bb13799525307680f4eb463cf4** after [Linux CI 39957511419](https://github.com/Arham-Begani/Chorus/actions/runs/39957511419) passed for **a54454b58a1a30ea602932cb4e2b98bbe5a510ec**: **165 tests (115 unit, 26 PostgreSQL integration, 24 desktop/mobile browser)**, typecheck, production build, both container images, actual worker replacement preserving attempts/events, full database archive/isolated restore with matching data and RLS, HTTPS configuration and GitGuardian. Later source changes document verification and screenshots only. Final state audit: zero active real missions, zero skipped-test reservations, normal live flags disabled, callback session closed.
+
+The current nine-slide pitch preserves the owner's design and updates only verified counts to 165/115. Native readback U0YP33gqVTh8dQ and all nine rendered PDF pages passed review. The issue checker reports one inherited small screenshot-caption warning on slide 3; no new text overflow was found. Live quote proof and signed-out pitch access remain unverified. Historical checkpoints below are superseded by these results.
 
 ## Final submission audit — 23 October
 

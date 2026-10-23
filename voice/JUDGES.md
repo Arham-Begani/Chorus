@@ -14,11 +14,15 @@ The complete supported workflow runs in simulation with no telephone number or p
 
 1. Open `/app`, sign in using the local setup instructions and choose **Talk to conductor**. Type or say: “Our venue cancelled. Find a venue for 40 people tomorrow at 6 pm under 12000 rupees.”
 2. Review the draft and approve **simulated research**. Venue access at 17:30 plus 45 minutes of catering setup misses the 18:00 start. CHORUS detects the 15-minute conflict and investigates earlier access.
-3. Show 17:00 access and the current quote comparison. Open **View sources** to inspect the attempt, confirmation and revision behind each term.
+3. Show 17:00 access and **Plan checks**: access plus 45 minutes finishes at 17:45, 15 minutes before the start. Review the shared budget headroom, capacity and confirmations. **Check sources** opens the quotes behind that assessment; each quote's **View sources** opens its attempt.
 4. Type or say: “Lower the budget to nine thousand rupees.” Previous terms and approval become stale. Approve research for revision 2 and inspect the revised result.
 5. Approve the preferred plan. This records a decision; it does not book, reserve or pay. Export the brief to keep the current terms and source references.
 
 Typed input works when browser speech is unavailable. Equipment rental/delivery demonstrates the same engine with different dependencies. [Failure/recovery rehearsal](DEMO.md#failure-and-reuse-rehearsal) covers refused research and pause/resume without invented terms.
+
+![Actual plan checks: readiness arithmetic, shared budget, capacity and confirmations](docs/images/plan-checks.png)
+
+*Simulation evidence, with the actual calculation and source references. The engine, workspace and exported brief use the same assessment. Equipment installation starts when both equipment and delivery are available. Unknown terms remain pending.*
 
 ## What to inspect
 
@@ -32,7 +36,7 @@ Typed input works when browser speech is unavailable. Equipment rental/delivery 
 
 ## Implementation and proof
 
-The [verified CI run](https://github.com/Arham-Begani/Chorus/actions/runs/39418268872) passed **153 tests: 103 unit, 26 PostgreSQL integration and 24 desktop/mobile browser**. It also verified production/container builds, worker replacement, database archive/isolated restore with RLS and HTTPS configuration. [Architecture](ARCHITECTURE.md) explains state, dispatch, revisions and permissions.
+The [verified CI run](https://github.com/Arham-Begani/Chorus/actions/runs/39957511419) passed **165 tests: 115 unit, 26 PostgreSQL integration and 24 desktop/mobile browser**. It also verified production/container builds, worker replacement, database archive/isolated restore with RLS and HTTPS configuration. [Architecture](ARCHITECTURE.md) explains state, dispatch, revisions and permissions.
 
 The original three-call-plus-browser demonstration remains **unverified**. An earlier real phone call recognized human speech and saved a scoped brief read; no confirmed structured live quote has been collected. Browser speech tests use protocol doubles. Simulation screenshots and configuration readback are not live-call evidence. Permanent public hosting has not been provisioned.
 
