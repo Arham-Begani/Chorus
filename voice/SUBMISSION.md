@@ -1,5 +1,7 @@
 # CHORUS submission package
 
+**Submitted on 24 October 2026.** Bolna displayed **Project submitted** and said selected teams would be emailed for the interview round. The owner supplied all required identity fields and entered as a solo builder. The registration email and confirmation screenshot are retained privately/local to the owner. No submission ID was displayed. This page now records the completed submission; do not send a duplicate.
+
 ## Bolna Symphony Buildathon
 
 Rechecked the [event page](https://www.bolna.ai/symphony/buildathon) and [actual submission form](https://www.bolna.ai/symphony/buildathon/submit) on 23 October 2026. The form is available and its required fields remain unchanged. The event page lists **31 October 2026** as the submission date; it does not specify a cutoff time/timezone. The **20 November** date is the finale. Aim to submit by 30 October rather than relying on an unspecified final-hour cutoff.
@@ -18,7 +20,7 @@ The form asks for team size, full name, the same email used to register, project
 
 **Current pitch deck:** [CHORUS pitch - redesign](https://docs.google.com/presentation/d/1kFYbbos2bv-y8siRZz47gnc-_F_a3I6LTuCYmKFEoC4/edit). The owner’s nine-slide deck preserves its design and covers the timing conflict, product, shared context, source terms, revisions, Bolna architecture and measured 165-test result, with live quote proof explicitly pending. All nine exported PDF pages were visually reviewed. **Public pitch access verified on 23 October:** after the owner enabled sharing, an isolated signed-out Chromium context opened the deck with HTTP 200, no sign-in redirect and no access block. Drive independently confirms anyone/reader permission. The native revision U0YP33gqVTh8dQ is unchanged from the reviewed PDF. Do not paste a local filesystem URL into the form.
 
-Team size, registered email and participant identity are owner-supplied. No application or final submission has been sent by the agent.
+The owner supplied team size, full name and the registration email. The final project form has been submitted successfully; the email is not published here.
 
 ## What judges can try
 
@@ -42,10 +44,10 @@ Implemented: responsive landing/workspace, current quote comparison, filtered so
 
 The 20 October 11:00 INR50 one-call appointment was skipped after automatic approval review rejected its combined temporary callback/preflight command as **“blocked by policy.”** No call runner executed or mission/reservation was created; the exact automation remains PAUSED. A later bounded callback-session implementation successfully verified dashboard404, unauthenticated webhook401 and authenticated unknown execution202, then synchronized both agents. The owner explicitly said **“no need to test now, just do app work.”** The owned session was closed and no afternoon call, paid browser session, reservation, retry or replacement schedule was created. Earlier real missions remain paused and ordinary live switches disabled. Before any future authorized test, start a fresh protected session, refresh the origin and resynchronize; the old temporary URL is closed. Preserve provisional reserves until definitive billing reconciliation. Public pitch viewing now passes; earlier access failures are historical.
 
-## Final owner actions
+## Completed submission checklist
 
-1. Confirm registration, team size and the registered email.
-2. Use the current public pitch link above; anyone-with-link viewing has passed an independent signed-out check.
-3. Rehearse from a fresh simulation mission, with a typed-command fallback available if the browser speech service is unavailable.
-4. Review the current claim boundary, then submit the form before the organizer's cutoff.
-5. If upgrading the entry to a real-call demonstration, complete the participant/cost/window requirements in [LOCAL_LIVE_TEST.md](integrations/LOCAL_LIVE_TEST.md) and record actual evidence before changing any claims.
+1. Owner identity, registration email and solo team size supplied and entered.
+2. Public repository and pitch links entered; anyone-with-link pitch viewing independently verified.
+3. Fresh simulation rehearsal passed on 23 October, with typed-command fallback and proof limits documented.
+4. Form submitted once on 24 October; success screen verified. Await an organizer email if selected for interview.
+5. Any further real-call demonstration still requires the participant/cost/window requirements in [LOCAL_LIVE_TEST.md](integrations/LOCAL_LIVE_TEST.md), with actual evidence before expanding public quote-capture claims.

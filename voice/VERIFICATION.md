@@ -1,5 +1,9 @@
 # Verification record
 
+## Submission confirmed — 24 October
+
+The authorized Bolna project form was submitted once using the owner's supplied identity and solo team size. The browser showed **Project submitted** and stated that selected teams would be emailed for the interview round. The confirmation screenshot is retained locally. No submission identifier was displayed. Application code is unchanged from the verified release; no application tests, real call or paid browser session were started during submission. The owner separately reports successful live calling; independently confirmed structured quote capture remains outside the recorded proof. Earlier unsent-form checkpoints below are historical.
+
 ## Final pre-submission check — 23 October
 
 Fresh typecheck and **165 automated tests passed: 115 unit, 26 serial PostgreSQL integration and 24 desktop/mobile browser** (browser: 3.9 minutes). Application/test/dependency/workflow files remain identical to the green [CI release](https://github.com/Arham-Begani/Chorus/actions/runs/39957511419), including its production/container builds, worker restart recovery, isolated database restore with RLS and HTTPS verification. Those builds were not repeated during this final rehearsal.
